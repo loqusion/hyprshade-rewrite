@@ -1,3 +1,5 @@
+mod off;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
@@ -9,9 +11,13 @@ pub struct Cli {
 
 impl Cli {
     pub fn run(&self) -> anyhow::Result<()> {
-        Ok(())
+        match &self.command {
+            Command::Off => off::run(),
+        }
     }
 }
 
 #[derive(Subcommand, Debug)]
-enum Command {}
+enum Command {
+    Off,
+}
