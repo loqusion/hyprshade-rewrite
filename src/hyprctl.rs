@@ -1,5 +1,3 @@
-use anyhow::{anyhow, Context};
-use serde::{Deserialize, Serialize};
 use std::{
     ffi::OsStr,
     fmt::{Display, Formatter},
@@ -7,6 +5,9 @@ use std::{
     process::{Command, Output, Stdio},
     str,
 };
+
+use anyhow::{anyhow, Context};
+use serde::{Deserialize, Serialize};
 
 pub const PROGRAM_NAME: &str = "hyprctl";
 
