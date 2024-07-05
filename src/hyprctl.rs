@@ -158,7 +158,7 @@ mod tests {
     #[test]
     fn test_json_valid_json() {
         let value = hyprctl_command_with("echo")
-            .args(["{\"life\": 42}"])
+            .args([r#"{ "life": 42 }"#])
             .json::<serde_json::Value>()
             .unwrap();
         assert_eq!(value, serde_json::json!({"life": 42}));
