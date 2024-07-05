@@ -150,7 +150,7 @@ impl HyprctlOption {
 mod tests {
     use super::*;
 
-    fn hyprctl_command_with(program: &str) -> HyprctlCommand {
+    fn hyprctl_command_from(program: &str) -> HyprctlCommand {
         let mut command = Command::new(program);
         command.stdin(Stdio::null());
         HyprctlCommand { command }
@@ -158,7 +158,7 @@ mod tests {
 
     #[test]
     fn test_output_with_check_error_on_non_zero_exit_code() {
-        let err = hyprctl_command_with("false")
+        let err = hyprctl_command_from("false")
             .output_with_check()
             .unwrap_err();
         assert!(err.downcast_ref::<std::io::Error>().is_none());
@@ -166,7 +166,7 @@ mod tests {
 
     #[test]
     fn test_json_valid_json() {
-        let value = hyprctl_command_with("echo")
+        let value = hyprctl_command_from("echo")
             .args([r#"{ "life": 42 }"#])
             .json::<serde_json::Value>()
             .unwrap();
@@ -175,7 +175,7 @@ mod tests {
 
     #[test]
     fn test_json_invalid_json() {
-        let err = hyprctl_command_with("echo")
+        let err = hyprctl_command_from("echo")
             .args(["{"])
             .json::<serde_json::Value>()
             .unwrap_err();
@@ -185,7 +185,7 @@ mod tests {
     #[test]
     fn test_hyprctl_command_display() {
         assert_eq!(
-            format!("{}", hyprctl_command_with("echo").args(["hello", "world"])),
+            format!("{}", hyprctl_command_from("echo").args(["hello", "world"])),
             "echo hello world"
         );
     }
