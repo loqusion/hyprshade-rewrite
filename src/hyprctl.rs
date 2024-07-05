@@ -128,11 +128,20 @@ impl HyprctlOption {
         self.str == SHADER_EMPTY_STRING || self.str.is_empty()
     }
 
-    fn get_value(&self) -> Option<&str> {
+    #[allow(dead_code)]
+    fn get_value_str(&self) -> Option<&str> {
         if self.is_empty() {
             None
         } else {
             Some(&self.str)
+        }
+    }
+
+    fn get_value_string(&self) -> Option<String> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.str.clone())
         }
     }
 }
@@ -193,7 +202,7 @@ pub mod shader {
             .args(["-j", "getoption", VARIABLE_NAME])
             .json_option()?;
 
-        Ok(option.get_value().map(|s| s.to_owned()))
+        Ok(option.get_value_string())
     }
 
     pub fn set(shader_path: &str) -> anyhow::Result<()> {
