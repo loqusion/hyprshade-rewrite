@@ -149,9 +149,10 @@ mod tests {
 
     #[test]
     fn test_output_with_check_error_on_non_zero_exit_code() {
-        hyprctl_command_with("false")
+        let err = hyprctl_command_with("false")
             .output_with_check()
             .unwrap_err();
+        assert!(err.downcast_ref::<std::io::Error>().is_none());
     }
 
     #[test]
@@ -165,10 +166,11 @@ mod tests {
 
     #[test]
     fn test_json_invalid_json() {
-        hyprctl_command_with("echo")
+        let err = hyprctl_command_with("echo")
             .args(["{"])
             .json::<serde_json::Value>()
             .unwrap_err();
+        assert!(err.downcast_ref::<serde_json::Error>().is_some());
     }
 
     #[test]
