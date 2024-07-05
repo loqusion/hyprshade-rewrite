@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Context};
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub const PROGRAM_NAME: &str = "hyprctl";
 
@@ -55,7 +55,7 @@ impl HyprctlCommand {
         }
     }
 
-    fn json<T: for<'de> Deserialize<'de>>(&mut self) -> anyhow::Result<T> {
+    fn json<T: DeserializeOwned>(&mut self) -> anyhow::Result<T> {
         let output = self.output_with_check()?;
         serde_json::from_slice(&output.stdout)
             .with_context(|| self.error_context(
