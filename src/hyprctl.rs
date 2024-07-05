@@ -35,17 +35,23 @@ impl HyprctlCommand {
     }
 
     fn output_with_check(&mut self) -> anyhow::Result<Output> {
-        let output = self.command.output()?;
+        let output = self
+            .command
+            .output()
+            .with_context(|| format!("Failed to execute {PROGRAM_NAME}"))?;
+
         if output.status.success() {
             Ok(output)
         } else if let Some(signal) = output.status.signal() {
             Err(anyhow!("'{PROGRAM_NAME}' terminated by signal {signal}"))
         } else {
-            Err(anyhow!(self.error_context(
-                &format!("{PROGRAM_NAME} returned a non-zero exit code"),
-                None,
-                &output
-            )))
+            let prelude = match output.status.code() {
+                Some(0) | None => {
+                    format!("{PROGRAM_NAME} terminated unsuccessfully (unknown cause)")
+                }
+                Some(code) => format!("{PROGRAM_NAME} returned with exit code {code}"),
+            };
+            Err(anyhow!(self.error_context(&prelude, None, &output)))
         }
     }
 
