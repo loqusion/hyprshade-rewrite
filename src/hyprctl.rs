@@ -105,6 +105,7 @@ impl Display for HyprctlCommand {
             .map(|s| s.to_str().expect("argument is not valid UTF-8"))
             .collect::<Vec<_>>()
             .join(" ");
+
         write!(f, "{command} {args}")
     }
 }
