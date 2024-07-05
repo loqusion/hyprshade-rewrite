@@ -137,6 +137,49 @@ impl HyprctlOption {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn hyprctl_command_with(program: &str) -> HyprctlCommand {
+        let mut command = Command::new(program);
+        command.stdin(Stdio::null());
+        HyprctlCommand { command }
+    }
+
+    #[test]
+    fn test_output_with_check_error_on_non_zero_exit_code() {
+        hyprctl_command_with("false")
+            .output_with_check()
+            .unwrap_err();
+    }
+
+    #[test]
+    fn test_json_valid_json() -> anyhow::Result<()> {
+        let value = hyprctl_command_with("echo")
+            .args(["{\"life\": 42}"])
+            .json::<serde_json::Value>()?;
+        assert_eq!(value, serde_json::json!({"life": 42}));
+        Ok(())
+    }
+
+    #[test]
+    fn test_json_invalid_json() {
+        hyprctl_command_with("echo")
+            .args(["{"])
+            .json::<serde_json::Value>()
+            .unwrap_err();
+    }
+
+    #[test]
+    fn test_hyprctl_command_display() {
+        assert_eq!(
+            format!("{}", hyprctl_command_with("echo").args(["hello", "world"])),
+            "echo hello world"
+        );
+    }
+}
+
 pub mod shader {
     use super::{HyprctlCommand, SHADER_EMPTY_STRING};
     use std::str;
