@@ -49,7 +49,7 @@ impl HyprctlCommand {
                 Some(0) | None => {
                     format!("{PROGRAM_NAME} terminated unsuccessfully (unknown cause)")
                 }
-                Some(code) => format!("{PROGRAM_NAME} returned with exit code {code}"),
+                Some(code) => format!("{PROGRAM_NAME} terminated with exit code {code}"),
             };
             Err(anyhow!(self.error_context(&prelude, None, &output)))
         }
