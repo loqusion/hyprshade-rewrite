@@ -106,7 +106,7 @@ impl Debug for HyprctlCommand {
             .collect::<Vec<_>>()
             .join(OsStr::new(" "))
             .into_string()
-            .expect("command is not valid UTF-8");
+            .unwrap_or("<invalid UTF-8>".into());
 
         write!(f, "{full_command}")
     }
