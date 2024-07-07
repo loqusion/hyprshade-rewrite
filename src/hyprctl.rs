@@ -72,11 +72,11 @@ impl HyprctlCommand {
 
     fn error_context(&self, preamble: &str, epilogue: Option<&str>, output: &Output) -> String {
         let stdout = str::from_utf8(&output.stdout)
-            .expect("stdout is not valid UTF-8")
-            .trim();
+            .map(str::trim)
+            .unwrap_or("<invalid UTF-8>");
         let stderr = str::from_utf8(&output.stderr)
-            .expect("stderr is not valid UTF-8")
-            .trim();
+            .map(str::trim)
+            .unwrap_or("<invalid UTF-8>");
 
         let mut context = format!(
             "{preamble}
