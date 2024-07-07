@@ -1,6 +1,6 @@
 use std::{
     ffi::OsStr,
-    fmt::{Display, Formatter},
+    fmt::{self, Display, Formatter},
     iter,
     os::unix::process::ExitStatusExt,
     process::{Command, Output, Stdio},
@@ -100,7 +100,7 @@ stderr:
 }
 
 impl Display for HyprctlCommand {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let full_command = iter::once(self.command.get_program())
             .chain(self.command.get_args())
             .collect::<Vec<_>>()
