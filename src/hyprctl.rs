@@ -70,7 +70,7 @@ impl HyprctlCommand {
         self.json()
     }
 
-    fn error_context(&self, preamble: &str, epilogue: Option<&str>, output: &Output) -> String {
+    fn error_context(&self, preamble: &str, postamble: Option<&str>, output: &Output) -> String {
         let stdout = str::from_utf8(&output.stdout)
             .map(str::trim)
             .map(|s| if s.is_empty() { "<empty>" } else { s })
@@ -92,8 +92,8 @@ stderr:
 {stderr}",
             command = self,
         );
-        if let Some(epilogue) = epilogue {
-            context.push_str(&format!("\n\n{}", epilogue));
+        if let Some(postamble) = postamble {
+            context.push_str(&format!("\n\n{}", postamble));
         }
         context
     }
