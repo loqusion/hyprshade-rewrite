@@ -1,6 +1,6 @@
 use std::{
     ffi::OsStr,
-    fmt::{self, Display, Formatter},
+    fmt::{self, Debug, Formatter},
     iter,
     os::unix::process::ExitStatusExt,
     process::{Command, Output, Stdio},
@@ -81,7 +81,7 @@ impl HyprctlCommand {
         let mut context = format!(
             "{preamble}
 command:
-{command}
+{command:?}
 
 stdout:
 {stdout}
@@ -99,7 +99,7 @@ stderr:
     }
 }
 
-impl Display for HyprctlCommand {
+impl Debug for HyprctlCommand {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let full_command = iter::once(self.command.get_program())
             .chain(self.command.get_args())
@@ -179,9 +179,12 @@ mod tests {
     }
 
     #[test]
-    fn test_hyprctl_command_display() {
+    fn test_hyprctl_command_debug() {
         assert_eq!(
-            format!("{}", hyprctl_command_from("echo").args(["hello", "world"])),
+            format!(
+                "{:?}",
+                hyprctl_command_from("echo").args(["hello", "world"])
+            ),
             "echo hello world"
         );
     }
