@@ -145,6 +145,7 @@ impl HyprctlOption {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::os::unix::ffi::OsStrExt;
 
     fn hyprctl_command_from(program: &str) -> HyprctlCommand {
         let mut command = Command::new(program);
@@ -187,6 +188,14 @@ mod tests {
             ),
             "echo hello world"
         );
+    }
+
+    #[test]
+    fn test_hyprctl_command_debug_invalid_utf8() {
+        let mut command = hyprctl_command_from("echo");
+        let invalid_utf8_str = OsStr::from_bytes(&[0xFF, 0xFF, 0xFF]);
+        command.command.arg(invalid_utf8_str);
+        assert_eq!(format!("{:?}", command), "<invalid UTF-8>");
     }
 }
 
