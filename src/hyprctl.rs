@@ -1,6 +1,7 @@
 use std::{
     ffi::OsStr,
     fmt::{Display, Formatter},
+    iter,
     os::unix::process::ExitStatusExt,
     process::{Command, Output, Stdio},
     str,
@@ -100,19 +101,14 @@ stderr:
 
 impl Display for HyprctlCommand {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        let command = self
-            .command
-            .get_program()
-            .to_str()
-            .expect("program name is not valid UTF-8");
-        let args = self
-            .command
-            .get_args()
-            .map(|s| s.to_str().expect("argument is not valid UTF-8"))
+        let full_command = iter::once(self.command.get_program())
+            .chain(self.command.get_args())
             .collect::<Vec<_>>()
-            .join(" ");
+            .join(OsStr::new(" "))
+            .into_string()
+            .expect("command is not valid UTF-8");
 
-        write!(f, "{command} {args}")
+        write!(f, "{full_command}")
     }
 }
 
