@@ -73,9 +73,11 @@ impl HyprctlCommand {
     fn error_context(&self, preamble: &str, epilogue: Option<&str>, output: &Output) -> String {
         let stdout = str::from_utf8(&output.stdout)
             .map(str::trim)
+            .map(|s| if s.is_empty() { "<empty>" } else { s })
             .unwrap_or("<invalid UTF-8>");
         let stderr = str::from_utf8(&output.stderr)
             .map(str::trim)
+            .map(|s| if s.is_empty() { "<empty>" } else { s })
             .unwrap_or("<invalid UTF-8>");
 
         let mut context = format!(
@@ -89,8 +91,6 @@ stdout:
 stderr:
 {stderr}",
             command = self,
-            stdout = if stdout.is_empty() { "<empty>" } else { stdout },
-            stderr = if stderr.is_empty() { "<empty>" } else { stderr },
         );
         if let Some(epilogue) = epilogue {
             context.push_str(&format!("\n\n{}", epilogue));
