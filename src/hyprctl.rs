@@ -234,7 +234,6 @@ mod tests {
 
 pub mod shader {
     use super::{HyprctlCommand, Result, SHADER_EMPTY_STRING};
-    use std::str;
 
     const VARIABLE_NAME: &str = "decoration:screen_shader";
 
