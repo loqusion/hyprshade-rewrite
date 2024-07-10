@@ -1,11 +1,23 @@
+use std::process::ExitCode;
+
+use super::CommandExecute;
 use crate::hyprctl;
+use clap::Parser;
 
-pub fn run() -> anyhow::Result<()> {
-    eprintln!("Implementation is incomlete");
+/**
+Show the current shader
+*/
+#[derive(Debug, Parser)]
+pub struct Current;
 
-    if let Some(shader_path) = hyprctl::shader::get()? {
-        println!("{shader_path}")
+impl CommandExecute for Current {
+    fn execute(self) -> anyhow::Result<ExitCode> {
+        eprintln!("Implementation is incomlete");
+
+        if let Some(shader_path) = hyprctl::shader::get()? {
+            println!("{shader_path}")
+        }
+
+        Ok(ExitCode::SUCCESS)
     }
-
-    Ok(())
 }

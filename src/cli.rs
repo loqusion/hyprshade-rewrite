@@ -1,7 +1,15 @@
 mod current;
+use current::Current;
 mod off;
+use off::Off;
+
+use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
+
+pub trait CommandExecute {
+    fn execute(self) -> anyhow::Result<ExitCode>;
+}
 
 #[derive(Debug, Parser)]
 #[command(version, about, long_about = None)]
@@ -10,19 +18,17 @@ pub struct Cli {
     command: Command,
 }
 
-impl Cli {
-    pub fn run(&self) -> anyhow::Result<()> {
-        match &self.command {
-            Command::Current => current::run(),
-            Command::Off => off::run(),
+impl CommandExecute for Cli {
+    fn execute(self) -> anyhow::Result<ExitCode> {
+        match self.command {
+            Command::Current(current) => current.execute(),
+            Command::Off(off) => off.execute(),
         }
     }
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Debug, Subcommand)]
 enum Command {
-    /// Show the current shader
-    Current,
-    /// Turn off shader
-    Off,
+    Current(Current),
+    Off(Off),
 }

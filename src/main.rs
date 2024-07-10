@@ -1,13 +1,13 @@
 mod cli;
 mod hyprctl;
 
-use clap::Parser;
-use cli::Cli;
+use std::process::ExitCode;
 
-fn main() -> anyhow::Result<()> {
+use clap::Parser;
+use cli::{Cli, CommandExecute};
+
+fn main() -> anyhow::Result<ExitCode> {
     let cli = Cli::parse();
 
-    cli.run()?;
-
-    Ok(())
+    cli.execute()
 }
