@@ -21,6 +21,8 @@ impl Cli {
 
 #[derive(Subcommand, Debug)]
 enum Command {
+    /// Show the current shader
     Current,
+    /// Turn off shader
     Off,
 }
