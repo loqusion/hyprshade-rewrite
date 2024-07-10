@@ -2,6 +2,8 @@ mod current;
 use current::Current;
 mod off;
 use off::Off;
+mod on;
+use on::On;
 
 use std::process::ExitCode;
 
@@ -23,6 +25,7 @@ impl CommandExecute for Cli {
         match self.command {
             Command::Current(current) => current.execute(),
             Command::Off(off) => off.execute(),
+            Command::On(on) => on.execute(),
         }
     }
 }
@@ -31,4 +34,5 @@ impl CommandExecute for Cli {
 enum Command {
     Current(Current),
     Off(Off),
+    On(On),
 }
