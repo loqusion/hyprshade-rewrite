@@ -1,3 +1,4 @@
+mod current;
 mod off;
 
 use clap::{Parser, Subcommand};
@@ -12,6 +13,7 @@ pub struct Cli {
 impl Cli {
     pub fn run(&self) -> anyhow::Result<()> {
         match &self.command {
+            Command::Current => current::run(),
             Command::Off => off::run(),
         }
     }
@@ -19,5 +21,6 @@ impl Cli {
 
 #[derive(Subcommand, Debug)]
 enum Command {
+    Current,
     Off,
 }
