@@ -1,13 +1,12 @@
 use std::{
     ffi::OsStr,
     fmt::{self, Debug, Formatter},
-    iter,
+    io, iter,
     os::unix::process::ExitStatusExt,
     process::{Command, Output, Stdio},
     str,
 };
 
-use anyhow::{anyhow, Context};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub const PROGRAM_NAME: &str = "hyprctl";
@@ -35,67 +34,40 @@ impl HyprctlCommand {
         self
     }
 
-    fn output_with_check(&mut self) -> anyhow::Result<Output> {
-        let output = self
-            .command
-            .output()
-            .with_context(|| format!("Failed to execute {PROGRAM_NAME}"))?;
+    fn output_with_check(&mut self) -> Result<Output> {
+        let output = self.command.output()?;
 
         if output.status.success() {
             Ok(output)
         } else if let Some(signal) = output.status.signal() {
-            Err(anyhow!("'{PROGRAM_NAME}' terminated by signal {signal}"))
+            Err(Error::Signal(signal))
+        } else if let Some(code) = output.status.code() {
+            Err(Error::Code {
+                code,
+                command: format!("{:?}", self),
+                output,
+            })
         } else {
-            let prelude = match output.status.code() {
-                Some(0) | None => {
-                    format!("{PROGRAM_NAME} terminated unsuccessfully (unknown cause)")
-                }
-                Some(code) => format!("{PROGRAM_NAME} terminated with exit code {code}"),
-            };
-            Err(anyhow!(self.error_context(&prelude, None, &output)))
+            Err(Error::Unknown {
+                command: format!("{:?}", self),
+                output,
+            })
         }
     }
 
-    fn json<T: DeserializeOwned>(&mut self) -> anyhow::Result<T> {
+    fn json<T: DeserializeOwned>(&mut self) -> Result<T> {
         let output = self.output_with_check()?;
-        serde_json::from_slice(&output.stdout)
-            .with_context(|| self.error_context(
-                &format!("{PROGRAM_NAME} returned invalid JSON, but failed to signal error via a non-zero exit code."),
-                Some("This is likely a bug in Hyprland. Go bug Vaxry about it (nicely :))"),
-                &output,
-            ))
+        let value = serde_json::from_slice(&output.stdout).map_err(|source| Error::SerdeJson {
+            source,
+            command: format!("{:?}", self),
+            output,
+        })?;
+
+        Ok(value)
     }
 
-    fn json_option(&mut self) -> anyhow::Result<HyprctlOption> {
+    fn json_option(&mut self) -> Result<HyprctlOption> {
         self.json()
-    }
-
-    fn error_context(&self, preamble: &str, postamble: Option<&str>, output: &Output) -> String {
-        let stdout = str::from_utf8(&output.stdout)
-            .map(str::trim)
-            .map(|s| if s.is_empty() { "<empty>" } else { s })
-            .unwrap_or("<invalid UTF-8>");
-        let stderr = str::from_utf8(&output.stderr)
-            .map(str::trim)
-            .map(|s| if s.is_empty() { "<empty>" } else { s })
-            .unwrap_or("<invalid UTF-8>");
-
-        let mut context = format!(
-            "{preamble}
-command:
-{command:?}
-
-stdout:
-{stdout}
-
-stderr:
-{stderr}",
-            command = self,
-        );
-        if let Some(postamble) = postamble {
-            context.push_str(&format!("\n\n{}", postamble));
-        }
-        context
     }
 }
 
@@ -142,6 +114,67 @@ impl HyprctlOption {
     }
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("Failed to execute {PROGRAM_NAME}")]
+    Io {
+        #[from]
+        source: io::Error,
+    },
+    #[error(
+        "{PROGRAM_NAME} returned invalid JSON, but failed to signal an error via non-zero exit code\n{}\n\n{}",
+        Error::additional_context(.command, .output),
+        "This is likely a bug in Hyprland. Go bug Vaxry about it (nicely :))",
+    )]
+    SerdeJson {
+        source: serde_json::Error,
+        command: String,
+        output: Output,
+    },
+    #[error("{PROGRAM_NAME} terminated by signal {0}")]
+    Signal(i32),
+    #[error(
+        "{PROGRAM_NAME} terminated with exit code {code}\n{}",
+        Error::additional_context(.command, .output),
+    )]
+    Code {
+        code: i32,
+        command: String,
+        output: Output,
+    },
+    #[error(
+        "{PROGRAM_NAME} terminated unsuccessfully (unknown cause)\n{}",
+        Error::additional_context(.command, .output),
+    )]
+    Unknown { command: String, output: Output },
+}
+
+impl Error {
+    fn additional_context(command: &str, output: &Output) -> String {
+        let stdout = str::from_utf8(&output.stdout)
+            .map(str::trim)
+            .map(|s| if s.is_empty() { "<empty>" } else { s })
+            .unwrap_or("<invalid UTF-8>");
+        let stderr = str::from_utf8(&output.stderr)
+            .map(str::trim)
+            .map(|s| if s.is_empty() { "<empty>" } else { s })
+            .unwrap_or("<invalid UTF-8>");
+
+        format!(
+            "command:
+{command}
+
+stdout:
+{stdout}
+
+stderr:
+{stderr}",
+        )
+    }
+}
+
+type Result<T> = std::result::Result<T, Error>;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -158,7 +191,7 @@ mod tests {
         let err = hyprctl_command_from("false")
             .output_with_check()
             .unwrap_err();
-        assert!(err.downcast_ref::<std::io::Error>().is_none());
+        assert!(matches!(err, Error::Code { code: 1, .. }))
     }
 
     #[test]
@@ -176,7 +209,7 @@ mod tests {
             .args(["{"])
             .json::<serde_json::Value>()
             .unwrap_err();
-        assert!(err.downcast_ref::<serde_json::Error>().is_some());
+        assert!(matches!(err, Error::SerdeJson { .. }))
     }
 
     #[test]
@@ -200,12 +233,12 @@ mod tests {
 }
 
 pub mod shader {
-    use super::{HyprctlCommand, SHADER_EMPTY_STRING};
+    use super::{HyprctlCommand, Result, SHADER_EMPTY_STRING};
     use std::str;
 
     const VARIABLE_NAME: &str = "decoration:screen_shader";
 
-    pub fn get() -> anyhow::Result<Option<String>> {
+    pub fn get() -> Result<Option<String>> {
         let option = HyprctlCommand::new()
             .args(["-j", "getoption", VARIABLE_NAME])
             .json_option()?;
@@ -213,7 +246,7 @@ pub mod shader {
         Ok(option.get_value_string())
     }
 
-    pub fn set(shader_path: &str) -> anyhow::Result<()> {
+    pub fn set(shader_path: &str) -> Result<()> {
         HyprctlCommand::new()
             .args(["keyword", VARIABLE_NAME, shader_path])
             .output_with_check()?;
@@ -221,7 +254,7 @@ pub mod shader {
         Ok(())
     }
 
-    pub fn clear() -> anyhow::Result<()> {
+    pub fn clear() -> Result<()> {
         set(SHADER_EMPTY_STRING)
     }
 }
