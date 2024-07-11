@@ -1,5 +1,6 @@
 //! Wrapper around the `hyprctl` binary
 use std::{
+    io,
     os::unix::process::ExitStatusExt,
     process::{Command, Output, Stdio},
 };
@@ -85,6 +86,14 @@ impl OutputExt for Command {
     fn output_with_check(&mut self) -> eyre::Result<Output> {
         let output = self
             .output()
+            .map_err(|err| {
+                if err.kind() == io::ErrorKind::NotFound {
+                    eyre::Report::new(err)
+                        .with_suggestion(|| format!("Is {PROGRAM_NAME} located in your PATH?"))
+                } else {
+                    err.into()
+                }
+            })
             .wrap_err_with(|| format!("failed to execute {PROGRAM_NAME}"))?;
 
         if output.status.success() {
