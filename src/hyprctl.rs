@@ -1,3 +1,4 @@
+//! Wrapper around the `hyprctl` binary
 use std::{
     ffi::OsStr,
     fmt::{self, Debug, Formatter},
