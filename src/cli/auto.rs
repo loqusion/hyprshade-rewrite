@@ -1,8 +1,8 @@
 use std::process::ExitCode;
 
 use super::CommandExecute;
-use anyhow::anyhow;
 use clap::Parser;
+use color_eyre::eyre::eyre;
 
 /**
 TODO: write help text
@@ -11,7 +11,7 @@ TODO: write help text
 pub struct Auto;
 
 impl CommandExecute for Auto {
-    fn execute(self) -> anyhow::Result<ExitCode> {
-        Err(anyhow!("Not implemented"))
+    fn execute(self) -> eyre::Result<ExitCode> {
+        Err(eyre!("Not implemented"))
     }
 }

@@ -1,8 +1,8 @@
 use std::process::ExitCode;
 
 use super::CommandExecute;
-use anyhow::anyhow;
 use clap::Parser;
+use color_eyre::eyre::eyre;
 
 /**
 TODO: write help text
@@ -15,9 +15,9 @@ pub struct Ls {
 }
 
 impl CommandExecute for Ls {
-    fn execute(self) -> anyhow::Result<ExitCode> {
+    fn execute(self) -> eyre::Result<ExitCode> {
         let Ls { long } = self;
 
-        Err(anyhow!("Not implemented"))
+        Err(eyre!("Not implemented"))
     }
 }

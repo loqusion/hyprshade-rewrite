@@ -1,8 +1,8 @@
 use std::process::ExitCode;
 
 use super::CommandExecute;
-use anyhow::anyhow;
 use clap::Parser;
+use color_eyre::eyre::eyre;
 
 /**
 TODO: write help text
@@ -17,9 +17,9 @@ pub struct Toggle {
 }
 
 impl CommandExecute for Toggle {
-    fn execute(self) -> anyhow::Result<ExitCode> {
+    fn execute(self) -> eyre::Result<ExitCode> {
         let Toggle { shader } = self;
 
-        Err(anyhow!("Not implemented"))
+        Err(eyre!("Not implemented"))
     }
 }

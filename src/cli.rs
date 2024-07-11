@@ -18,7 +18,7 @@ use std::process::ExitCode;
 use clap::{Parser, Subcommand};
 
 pub trait CommandExecute {
-    fn execute(self) -> anyhow::Result<ExitCode>;
+    fn execute(self) -> eyre::Result<ExitCode>;
 }
 
 #[derive(Debug, Parser)]
@@ -29,7 +29,7 @@ pub struct Cli {
 }
 
 impl CommandExecute for Cli {
-    fn execute(self) -> anyhow::Result<ExitCode> {
+    fn execute(self) -> eyre::Result<ExitCode> {
         match self.command {
             Command::Auto(auto) => auto.execute(),
             Command::Current(current) => current.execute(),

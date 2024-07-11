@@ -11,7 +11,7 @@ Show the current shader
 pub struct Current;
 
 impl CommandExecute for Current {
-    fn execute(self) -> anyhow::Result<ExitCode> {
+    fn execute(self) -> eyre::Result<ExitCode> {
         eprintln!("Implementation is incomlete");
 
         if let Some(shader_path) = hyprctl::shader::get()? {

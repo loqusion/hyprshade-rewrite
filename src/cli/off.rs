@@ -11,7 +11,7 @@ Turn off shader
 pub struct Off;
 
 impl CommandExecute for Off {
-    fn execute(self) -> anyhow::Result<ExitCode> {
+    fn execute(self) -> eyre::Result<ExitCode> {
         hyprctl::shader::clear()?;
         Ok(ExitCode::SUCCESS)
     }

@@ -17,7 +17,7 @@ pub struct On {
 }
 
 impl CommandExecute for On {
-    fn execute(self) -> anyhow::Result<ExitCode> {
+    fn execute(self) -> eyre::Result<ExitCode> {
         let On { shader } = self;
 
         eprintln!("Implementation is incomlete");
