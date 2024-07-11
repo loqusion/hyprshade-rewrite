@@ -85,7 +85,7 @@ impl OutputExt for Command {
     fn output_with_check(&mut self) -> eyre::Result<Output> {
         let output = self
             .output()
-            .wrap_err_with(|| format!("Failed to execute {PROGRAM_NAME}"))?;
+            .wrap_err_with(|| format!("failed to execute {PROGRAM_NAME}"))?;
 
         if output.status.success() {
             Ok(output)
@@ -112,7 +112,7 @@ impl CommandJsonExt for Command {
     fn json<T: DeserializeOwned>(&mut self) -> eyre::Result<T> {
         let output = self.output_with_check()?;
         let value = serde_json::from_slice(&output.stdout)
-            .wrap_err_with(|| format!("{PROGRAM_NAME} returned invalid JSON, but failed to signal an error via non-zero exit code"))
+            .wrap_err_with(|| format!("failed to parse JSON returned by {PROGRAM_NAME}"))
             .with_command_sections(self, &output)
             .suggestion("This is likely a bug in Hyprland. Go bug Vaxry about it (nicely :))")?;
 
