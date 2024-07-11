@@ -6,7 +6,7 @@ use std::{
 };
 
 use color_eyre::{
-    eyre::{eyre, Context},
+    eyre::{eyre, WrapErr},
     Section, SectionExt,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
