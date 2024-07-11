@@ -15,28 +15,65 @@ pub const PROGRAM_NAME: &str = "hyprctl";
 /// Special value for `decoration:screen_shader` meaning no shader is applied
 const SHADER_EMPTY_STRING: &str = "[[EMPTY]]";
 
-trait EyreSectionExt: Section {
-    fn with_command_sections(self, command: &Command, output: &Output) -> Self::Return;
+pub mod shader {
+    use super::{hyprctl_command, CommandJsonExt, HyprctlOption, OutputExt, SHADER_EMPTY_STRING};
+
+    const VARIABLE_NAME: &str = "decoration:screen_shader";
+
+    pub fn get() -> eyre::Result<Option<String>> {
+        let option = hyprctl_command()
+            .args(["-j", "getoption", VARIABLE_NAME])
+            .json::<HyprctlOption>()?;
+
+        Ok(option.get_value_string())
+    }
+
+    pub fn set(shader_path: &str) -> eyre::Result<()> {
+        hyprctl_command()
+            .args(["keyword", VARIABLE_NAME, shader_path])
+            .output_with_check()?;
+
+        Ok(())
+    }
+
+    pub fn clear() -> eyre::Result<()> {
+        set(SHADER_EMPTY_STRING)
+    }
 }
 
-impl<T, E> EyreSectionExt for eyre::Result<T, E>
-where
-    E: Into<eyre::Report>,
-{
-    fn with_command_sections(self, command: &Command, output: &Output) -> Self::Return {
-        self.with_section(|| format!("{:?}", command).header("Command:"))
-            .with_section(|| {
-                String::from_utf8_lossy(&output.stdout)
-                    .trim()
-                    .to_string()
-                    .header("Stdout:")
-            })
-            .with_section(|| {
-                String::from_utf8_lossy(&output.stderr)
-                    .trim()
-                    .to_string()
-                    .header("Stderr:")
-            })
+fn hyprctl_command() -> Command {
+    let mut command = Command::new(PROGRAM_NAME);
+    command.stdin(Stdio::null());
+    command
+}
+
+#[derive(Serialize, Deserialize)]
+struct HyprctlOption {
+    option: String,
+    str: String,
+    set: bool,
+}
+
+impl HyprctlOption {
+    fn is_empty(&self) -> bool {
+        self.str == SHADER_EMPTY_STRING || self.str.is_empty()
+    }
+
+    #[allow(dead_code)]
+    fn get_value_str(&self) -> Option<&str> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(&self.str)
+        }
+    }
+
+    fn get_value_string(&self) -> Option<String> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.str.clone())
+        }
     }
 }
 
@@ -83,39 +120,28 @@ impl CommandJsonExt for Command {
     }
 }
 
-fn hyprctl_command() -> Command {
-    let mut command = Command::new(PROGRAM_NAME);
-    command.stdin(Stdio::null());
-    command
+trait EyreSectionExt: Section {
+    fn with_command_sections(self, command: &Command, output: &Output) -> Self::Return;
 }
 
-#[derive(Serialize, Deserialize)]
-struct HyprctlOption {
-    option: String,
-    str: String,
-    set: bool,
-}
-
-impl HyprctlOption {
-    fn is_empty(&self) -> bool {
-        self.str == SHADER_EMPTY_STRING || self.str.is_empty()
-    }
-
-    #[allow(dead_code)]
-    fn get_value_str(&self) -> Option<&str> {
-        if self.is_empty() {
-            None
-        } else {
-            Some(&self.str)
-        }
-    }
-
-    fn get_value_string(&self) -> Option<String> {
-        if self.is_empty() {
-            None
-        } else {
-            Some(self.str.clone())
-        }
+impl<T, E> EyreSectionExt for eyre::Result<T, E>
+where
+    E: Into<eyre::Report>,
+{
+    fn with_command_sections(self, command: &Command, output: &Output) -> Self::Return {
+        self.with_section(|| format!("{:?}", command).header("Command:"))
+            .with_section(|| {
+                String::from_utf8_lossy(&output.stdout)
+                    .trim()
+                    .to_string()
+                    .header("Stdout:")
+            })
+            .with_section(|| {
+                String::from_utf8_lossy(&output.stderr)
+                    .trim()
+                    .to_string()
+                    .header("Stderr:")
+            })
     }
 }
 
@@ -150,31 +176,5 @@ mod tests {
         assert!(err
             .to_string()
             .starts_with(&format!("{PROGRAM_NAME} returned invalid JSON")));
-    }
-}
-
-pub mod shader {
-    use super::{hyprctl_command, CommandJsonExt, HyprctlOption, OutputExt, SHADER_EMPTY_STRING};
-
-    const VARIABLE_NAME: &str = "decoration:screen_shader";
-
-    pub fn get() -> eyre::Result<Option<String>> {
-        let option = hyprctl_command()
-            .args(["-j", "getoption", VARIABLE_NAME])
-            .json::<HyprctlOption>()?;
-
-        Ok(option.get_value_string())
-    }
-
-    pub fn set(shader_path: &str) -> eyre::Result<()> {
-        hyprctl_command()
-            .args(["keyword", VARIABLE_NAME, shader_path])
-            .output_with_check()?;
-
-        Ok(())
-    }
-
-    pub fn clear() -> eyre::Result<()> {
-        set(SHADER_EMPTY_STRING)
     }
 }
