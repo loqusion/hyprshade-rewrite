@@ -15,6 +15,31 @@ pub const PROGRAM_NAME: &str = "hyprctl";
 /// Special value for `decoration:screen_shader` meaning no shader is applied
 const SHADER_EMPTY_STRING: &str = "[[EMPTY]]";
 
+trait EyreSectionExt: Section {
+    fn with_command_sections(self, command: &Command, output: &Output) -> Self::Return;
+}
+
+impl<T, E> EyreSectionExt for eyre::Result<T, E>
+where
+    E: Into<eyre::Report>,
+{
+    fn with_command_sections(self, command: &Command, output: &Output) -> Self::Return {
+        self.with_section(|| format!("{:?}", command).header("Command:"))
+            .with_section(|| {
+                String::from_utf8_lossy(&output.stdout)
+                    .trim()
+                    .to_string()
+                    .header("Stdout:")
+            })
+            .with_section(|| {
+                String::from_utf8_lossy(&output.stderr)
+                    .trim()
+                    .to_string()
+                    .header("Stderr:")
+            })
+    }
+}
+
 trait OutputExt {
     fn output_with_check(&mut self) -> eyre::Result<Output>;
 }
@@ -37,19 +62,7 @@ impl OutputExt for Command {
                     "{PROGRAM_NAME} terminated unsuccessfully (unknown cause)"
                 ))
             };
-            err.with_section(|| format!("{:?}", self).header("Command:"))
-                .with_section(|| {
-                    String::from_utf8_lossy(&output.stdout)
-                        .trim()
-                        .to_string()
-                        .header("Stdout:")
-                })
-                .with_section(|| {
-                    String::from_utf8_lossy(&output.stderr)
-                        .trim()
-                        .to_string()
-                        .header("Stderr:")
-                })
+            err.with_command_sections(self, &output)
         }
     }
 }
@@ -63,9 +76,7 @@ impl CommandJsonExt for Command {
         let output = self.output_with_check()?;
         let value = serde_json::from_slice(&output.stdout)
             .wrap_err_with(|| format!("{PROGRAM_NAME} returned invalid JSON, but failed to signal an error via non-zero exit code"))
-            .with_section(|| format!("{:?}", self).header("Command:"))
-            .with_section(|| String::from_utf8_lossy(&output.stdout).trim().to_string().header("Stdout:"))
-            .with_section(|| String::from_utf8_lossy(&output.stderr).trim().to_string().header("Stderr:"))
+            .with_command_sections(self, &output)
             .suggestion("This is likely a bug in Hyprland. Go bug Vaxry about it (nicely :))")?;
 
         Ok(value)
