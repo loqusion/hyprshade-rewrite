@@ -182,8 +182,6 @@ mod tests {
             .args(["{"])
             .json::<serde_json::Value>()
             .unwrap_err();
-        assert!(err
-            .to_string()
-            .starts_with(&format!("{PROGRAM_NAME} returned invalid JSON")));
+        assert!(err.downcast_ref::<serde_json::Error>().is_some());
     }
 }
