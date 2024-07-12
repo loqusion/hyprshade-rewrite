@@ -17,7 +17,7 @@ pub const PROGRAM_NAME: &str = "hyprctl";
 const SHADER_EMPTY_STRING: &str = "[[EMPTY]]";
 
 pub mod shader {
-    use super::{hyprctl_command, CommandJsonExt, HyprctlOption, OutputExt, SHADER_EMPTY_STRING};
+    use super::{hyprctl_command, HyprctlOption, JsonExt, OutputExt, SHADER_EMPTY_STRING};
 
     const VARIABLE_NAME: &str = "decoration:screen_shader";
 
@@ -104,11 +104,11 @@ impl OutputExt for Command {
     }
 }
 
-trait CommandJsonExt {
+trait JsonExt {
     fn json<T: DeserializeOwned>(&mut self) -> eyre::Result<T>;
 }
 
-impl CommandJsonExt for Command {
+impl JsonExt for Command {
     fn json<T: DeserializeOwned>(&mut self) -> eyre::Result<T> {
         let output = self.output_with_check()?;
         let value = serde_json::from_slice(&output.stdout)
@@ -120,11 +120,11 @@ impl CommandJsonExt for Command {
     }
 }
 
-trait EyreSectionExt: Section {
+trait CommandSectionExt: Section {
     fn with_command_sections(self, command: &Command, output: &Output) -> Self::Return;
 }
 
-impl<T, E> EyreSectionExt for eyre::Result<T, E>
+impl<T, E> CommandSectionExt for eyre::Result<T, E>
 where
     E: Into<eyre::Report>,
 {
