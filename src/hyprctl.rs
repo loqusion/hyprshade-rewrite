@@ -26,7 +26,7 @@ pub mod shader {
             .args(["-j", "getoption", VARIABLE_NAME])
             .json::<HyprctlOption>()?;
 
-        Ok(option.get_value_string())
+        Ok(option.into_value())
     }
 
     pub fn set(shader_path: &str) -> eyre::Result<()> {
@@ -60,20 +60,11 @@ impl HyprctlOption {
         self.str == SHADER_EMPTY_STRING || self.str.is_empty()
     }
 
-    #[allow(dead_code)]
-    fn get_value_str(&self) -> Option<&str> {
+    fn into_value(self) -> Option<String> {
         if self.is_empty() {
             None
         } else {
-            Some(&self.str)
-        }
-    }
-
-    fn get_value_string(&self) -> Option<String> {
-        if self.is_empty() {
-            None
-        } else {
-            Some(self.str.clone())
+            Some(self.str)
         }
     }
 }
