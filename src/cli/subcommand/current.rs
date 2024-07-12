@@ -1,6 +1,6 @@
 use std::process::ExitCode;
 
-use super::CommandExecute;
+use crate::cli::CommandExecute;
 use crate::hyprctl;
 use clap::Parser;
 

@@ -1,6 +1,6 @@
 use std::process::ExitCode;
 
-use super::CommandExecute;
+use crate::cli::CommandExecute;
 use clap::Parser;
 use color_eyre::eyre::eyre;
 
@@ -8,15 +8,15 @@ use color_eyre::eyre::eyre;
 TODO: write help text
 */
 #[derive(Debug, Parser)]
-pub struct Install {
+pub struct Ls {
     /// TODO: write help text
-    #[arg(long)]
-    enable: bool,
+    #[arg(short, long)]
+    long: bool,
 }
 
-impl CommandExecute for Install {
+impl CommandExecute for Ls {
     fn execute(self) -> eyre::Result<ExitCode> {
-        let Install { enable } = self;
+        let Ls { long } = self;
 
         Err(eyre!("Not implemented"))
     }
