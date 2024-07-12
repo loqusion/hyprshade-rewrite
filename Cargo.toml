@@ -12,3 +12,8 @@ mustache = "0.9.0"
 serde = { version = "1.0.203", features = ["derive"] }
 serde_json = "1.0.120"
 thiserror = "1.0.61"
+
+[profile.release]
+opt-level = "z"
+strip = true
+lto = true
