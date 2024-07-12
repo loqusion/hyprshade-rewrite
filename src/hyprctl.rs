@@ -99,7 +99,7 @@ impl OutputExt for Command {
                     "{PROGRAM_NAME} terminated unsuccessfully (unknown cause)"
                 ))
             };
-            err.with_command_sections(self, &output)
+            err.command_sections(self, &output)
         }
     }
 }
@@ -113,7 +113,7 @@ impl JsonExt for Command {
         let output = self.output_with_check()?;
         let value = serde_json::from_slice(&output.stdout)
             .wrap_err_with(|| format!("failed to parse JSON returned by {PROGRAM_NAME}"))
-            .with_command_sections(self, &output)
+            .command_sections(self, &output)
             .suggestion("This is likely a bug in Hyprland. Go bug Vaxry about it (nicely :))")?;
 
         Ok(value)
@@ -121,14 +121,14 @@ impl JsonExt for Command {
 }
 
 trait CommandSectionExt: Section {
-    fn with_command_sections(self, command: &Command, output: &Output) -> Self::Return;
+    fn command_sections(self, command: &Command, output: &Output) -> Self::Return;
 }
 
 impl<T, E> CommandSectionExt for eyre::Result<T, E>
 where
     E: Into<eyre::Report>,
 {
-    fn with_command_sections(self, command: &Command, output: &Output) -> Self::Return {
+    fn command_sections(self, command: &Command, output: &Output) -> Self::Return {
         self.with_section(|| format!("{:?}", command).header("Command:"))
             .with_section(|| {
                 String::from_utf8_lossy(&output.stdout)
