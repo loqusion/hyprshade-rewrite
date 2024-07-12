@@ -48,7 +48,7 @@ fn hyprctl_command() -> Command {
     command
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct HyprctlOption {
     option: String,
     str: String,
