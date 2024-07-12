@@ -16,7 +16,7 @@ pub struct Install {
 
 impl CommandExecute for Install {
     fn execute(self) -> eyre::Result<ExitCode> {
-        let Install { enable } = self;
+        let Install { enable: _ } = self;
 
         Err(eyre!("Not implemented"))
     }

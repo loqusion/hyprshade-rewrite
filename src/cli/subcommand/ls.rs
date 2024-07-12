@@ -16,7 +16,7 @@ pub struct Ls {
 
 impl CommandExecute for Ls {
     fn execute(self) -> eyre::Result<ExitCode> {
-        let Ls { long } = self;
+        let Ls { long: _ } = self;
 
         Err(eyre!("Not implemented"))
     }

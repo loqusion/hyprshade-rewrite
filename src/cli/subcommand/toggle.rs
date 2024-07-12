@@ -18,7 +18,7 @@ pub struct Toggle {
 
 impl CommandExecute for Toggle {
     fn execute(self) -> eyre::Result<ExitCode> {
-        let Toggle { shader } = self;
+        let Toggle { shader: _ } = self;
 
         Err(eyre!("Not implemented"))
     }
