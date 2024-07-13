@@ -13,7 +13,7 @@ fn main() -> eyre::Result<ExitCode> {
 
     let cli = Cli::parse();
 
-    cli.instrumentation.setup();
+    cli.instrumentation.setup()?;
 
     cli.execute()
 }
