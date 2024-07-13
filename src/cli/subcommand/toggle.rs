@@ -17,6 +17,7 @@ pub struct Toggle {
 }
 
 impl CommandExecute for Toggle {
+    #[tracing::instrument(level = "debug")]
     fn execute(self) -> eyre::Result<ExitCode> {
         let Toggle { shader: _ } = self;
 

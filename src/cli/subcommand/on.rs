@@ -3,6 +3,7 @@ use std::process::ExitCode;
 use crate::cli::CommandExecute;
 use crate::hyprctl;
 use clap::Parser;
+use tracing::warn;
 
 /**
 Turn on a shader
@@ -17,10 +18,11 @@ pub struct On {
 }
 
 impl CommandExecute for On {
+    #[tracing::instrument(level = "debug")]
     fn execute(self) -> eyre::Result<ExitCode> {
         let On { shader } = self;
 
-        eprintln!("Implementation is incomlete");
+        warn!("Implementation is incomlete");
 
         hyprctl::shader::set(&shader)?;
 

@@ -21,6 +21,7 @@ pub struct Cli {
 }
 
 impl CommandExecute for Cli {
+    #[tracing::instrument(level = "trace")]
     fn execute(self) -> eyre::Result<ExitCode> {
         match self.command {
             HyprshadeSubcommand::Auto(auto) => auto.execute(),
