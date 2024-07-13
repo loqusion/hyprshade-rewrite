@@ -21,6 +21,7 @@ pub mod shader {
 
     const VARIABLE_NAME: &str = "decoration:screen_shader";
 
+    #[tracing::instrument(level = "debug")]
     pub fn get() -> eyre::Result<Option<String>> {
         let option = hyprctl_command()
             .args(["-j", "getoption", VARIABLE_NAME])
@@ -29,6 +30,7 @@ pub mod shader {
         Ok(option.into_value())
     }
 
+    #[tracing::instrument(level = "debug")]
     pub fn set(shader_path: &str) -> eyre::Result<()> {
         hyprctl_command()
             .args(["keyword", VARIABLE_NAME, shader_path])
@@ -37,6 +39,7 @@ pub mod shader {
         Ok(())
     }
 
+    #[tracing::instrument(level = "debug")]
     pub fn clear() -> eyre::Result<()> {
         set(SHADER_EMPTY_STRING)
     }
