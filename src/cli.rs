@@ -1,8 +1,9 @@
+mod instrumentation;
 mod subcommand;
 
 use std::process::ExitCode;
 
-use self::subcommand::HyprshadeSubcommand;
+use self::{instrumentation::Instrumentation, subcommand::HyprshadeSubcommand};
 use clap::Parser;
 
 pub trait CommandExecute {
@@ -12,6 +13,9 @@ pub trait CommandExecute {
 #[derive(Debug, Parser)]
 #[command(version, about, long_about = None)]
 pub struct Cli {
+    #[group(flatten)]
+    pub instrumentation: Instrumentation,
+
     #[command(subcommand)]
     command: HyprshadeSubcommand,
 }
