@@ -15,7 +15,7 @@ pub struct Ls {
 }
 
 impl CommandExecute for Ls {
-    #[tracing::instrument(level = "debug")]
+    #[tracing::instrument(level = "debug", skip_all)]
     fn execute(self) -> eyre::Result<ExitCode> {
         let Ls { long: _ } = self;
 

@@ -18,7 +18,7 @@ pub struct On {
 }
 
 impl CommandExecute for On {
-    #[tracing::instrument(level = "debug")]
+    #[tracing::instrument(level = "debug", skip_all)]
     fn execute(self) -> eyre::Result<ExitCode> {
         let On { shader } = self;
 

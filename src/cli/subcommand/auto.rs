@@ -11,7 +11,7 @@ TODO: write help text
 pub struct Auto;
 
 impl CommandExecute for Auto {
-    #[tracing::instrument(level = "debug")]
+    #[tracing::instrument(level = "debug", skip_all)]
     fn execute(self) -> eyre::Result<ExitCode> {
         Err(eyre!("Not implemented"))
     }

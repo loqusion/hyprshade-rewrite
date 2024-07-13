@@ -15,7 +15,7 @@ pub struct Install {
 }
 
 impl CommandExecute for Install {
-    #[tracing::instrument(level = "debug")]
+    #[tracing::instrument(level = "debug", skip_all)]
     fn execute(self) -> eyre::Result<ExitCode> {
         let Install { enable: _ } = self;
 

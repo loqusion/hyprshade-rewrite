@@ -12,7 +12,7 @@ Show the current shader
 pub struct Current;
 
 impl CommandExecute for Current {
-    #[tracing::instrument(level = "debug")]
+    #[tracing::instrument(level = "debug", skip_all)]
     fn execute(self) -> eyre::Result<ExitCode> {
         warn!("Implementation is incomlete");
 
