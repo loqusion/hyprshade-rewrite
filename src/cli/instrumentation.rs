@@ -67,15 +67,19 @@ impl Instrumentation {
                     Some(std::env::VarError::NotPresent) => (),
                     _ => {
                         return Err(err)
-                            .wrap_err_with(|| format!("failed to parse directives in {}", EnvFilter::DEFAULT_ENV))
+                            .wrap_err_with(|| {
+                                format!("failed to parse directives in {}", EnvFilter::DEFAULT_ENV)
+                            })
                             .suggestion("See https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html#directives");
                     }
                 }
             }
 
-            Ok(EnvFilter::try_new(
-                format!("{}={}", env!("CARGO_PKG_NAME"), self.log_level().as_str()),
-            )?)
+            Ok(EnvFilter::try_new(format!(
+                "{}={}",
+                env!("CARGO_PKG_NAME"),
+                self.log_level().as_str()
+            ))?)
         })
     }
 
