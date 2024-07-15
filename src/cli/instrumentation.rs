@@ -77,7 +77,7 @@ impl Instrumentation {
 
             Ok(EnvFilter::try_new(format!(
                 "{}={}",
-                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_NAME").replace('-', "_"),
                 self.log_level().as_str()
             ))?)
         })
