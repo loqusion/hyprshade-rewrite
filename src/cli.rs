@@ -1,3 +1,4 @@
+mod common;
 mod instrumentation;
 mod subcommand;
 

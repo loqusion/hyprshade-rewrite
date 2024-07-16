@@ -1,6 +1,6 @@
 use std::process::ExitCode;
 
-use crate::cli::CommandExecute;
+use crate::cli::{common::SHADER_HELP, CommandExecute};
 use crate::hyprctl;
 use clap::Parser;
 use tracing::warn;
@@ -10,10 +10,7 @@ Turn on a shader
 */
 #[derive(Debug, Parser)]
 pub struct On {
-    /// Which shader to turn on
-    ///
-    /// May be a name (e.g. `blue-light-filter`)
-    /// or a path (e.g. `~/.config/hypr/shaders/blue-light-filter.glsl`)
+    #[arg(help = SHADER_HELP)]
     shader: String,
 }
 
