@@ -20,6 +20,9 @@ tracing-error = "0.2.0"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 walkdir = "2.5.0"
 
+[dev-dependencies]
+tempfile = "3.10.1"
+
 [profile.release]
 opt-level = "z"
 strip = true
