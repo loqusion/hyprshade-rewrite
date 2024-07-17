@@ -17,6 +17,8 @@ pub const PROGRAM_NAME: &str = "hyprctl";
 const SHADER_EMPTY_STRING: &str = "[[EMPTY]]";
 
 pub mod shader {
+    use std::{ffi::OsStr, path::Path};
+
     use super::{hyprctl_command, HyprctlOption, JsonExt, OutputExt, SHADER_EMPTY_STRING};
 
     const VARIABLE_NAME: &str = "decoration:screen_shader";
@@ -31,17 +33,23 @@ pub mod shader {
     }
 
     #[tracing::instrument(level = "debug")]
-    pub fn set(shader_path: &str) -> eyre::Result<()> {
-        hyprctl_command()
-            .args(["keyword", VARIABLE_NAME, shader_path])
-            .output_with_check()?;
-
-        Ok(())
+    pub fn set(shader_path: &Path) -> eyre::Result<()> {
+        _set(shader_path.as_os_str())
     }
 
     #[tracing::instrument(level = "debug")]
     pub fn clear() -> eyre::Result<()> {
-        set(SHADER_EMPTY_STRING)
+        _set(SHADER_EMPTY_STRING.as_ref())
+    }
+
+    #[tracing::instrument(level = "debug")]
+    fn _set(shader_path: &OsStr) -> eyre::Result<()> {
+        hyprctl_command()
+            .args(["keyword", VARIABLE_NAME])
+            .arg(shader_path)
+            .output_with_check()?;
+
+        Ok(())
     }
 }
 
