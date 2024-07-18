@@ -1,11 +1,64 @@
 use std::{
-    io,
-    path::{PathBuf, MAIN_SEPARATOR},
+    env, io,
+    path::{Path, PathBuf, MAIN_SEPARATOR},
 };
 
-pub fn resolve(shader: &str) -> Result<PathBuf, ResolverError> {
-    if shader.contains(MAIN_SEPARATOR) {
-        let path = PathBuf::from(shader);
+use directories::ProjectDirs;
+
+const SYSTEM_HYPRSHADE_DIR: &str = concat!("/usr/share/", env!("CARGO_PKG_NAME"));
+
+trait ResolverTrait {
+    fn resolve(&self) -> Result<PathBuf, ResolverError>;
+}
+
+pub struct Resolver<'a>(Box<dyn ResolverTrait + 'a>);
+
+struct ResolverFromName<'a>(&'a str);
+struct ResolverFromPath<'a>(&'a Path);
+
+impl<'a> Resolver<'a> {
+    pub fn new(shader: &'a str) -> Self {
+        if shader.contains(MAIN_SEPARATOR) {
+            Self(Box::new(ResolverFromPath(Path::new(shader))))
+        } else {
+            Self(Box::new(ResolverFromName(shader)))
+        }
+    }
+
+    pub fn resolve(&self) -> Result<PathBuf, ResolverError> {
+        self.0.resolve()
+    }
+}
+
+impl<'a> ResolverFromName<'a> {
+    fn all_dirs() -> Vec<PathBuf> {
+        [
+            env::var("HYPRSHADE_SHADERS_DIR").map(PathBuf::from).ok(),
+            ProjectDirs::from("", "", "hypr").map(|p| p.config_dir().to_path_buf().join("shaders")),
+            ProjectDirs::from("", "", env!("CARGO_PKG_NAME"))
+                .map(|p| p.config_dir().to_path_buf().join("shaders")),
+            Some([SYSTEM_HYPRSHADE_DIR, "shaders"].iter().collect()),
+        ]
+        .into_iter()
+        .flatten()
+        .collect()
+    }
+}
+
+impl<'a> ResolverTrait for ResolverFromName<'a> {
+    fn resolve(&self) -> Result<PathBuf, ResolverError> {
+        for dir in Self::all_dirs() {
+            eprintln!("{dir:?}");
+        }
+
+        todo!()
+    }
+}
+
+impl<'a> ResolverTrait for ResolverFromPath<'a> {
+    fn resolve(&self) -> Result<PathBuf, ResolverError> {
+        let Self(path) = self;
+        let path = path.to_path_buf();
 
         match path.try_exists() {
             Ok(true) => Ok(path),
@@ -15,13 +68,7 @@ pub fn resolve(shader: &str) -> Result<PathBuf, ResolverError> {
             )),
             Err(e) => Err(ResolverError::IoError(path, e)),
         }
-    } else {
-        resolve_from_name(shader)
     }
-}
-
-fn resolve_from_name(_shader_name: &str) -> Result<PathBuf, ResolverError> {
-    todo!()
 }
 
 #[non_exhaustive]

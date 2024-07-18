@@ -2,7 +2,8 @@ use std::process::ExitCode;
 
 use crate::{
     cli::{common::SHADER_HELP, CommandExecute},
-    hyprctl, resolver,
+    hyprctl,
+    resolver::Resolver,
 };
 use clap::Parser;
 use tracing::warn;
@@ -23,7 +24,7 @@ impl CommandExecute for On {
 
         warn!("Implementation is incomlete");
 
-        let shader_path = resolver::resolve(&shader)?;
+        let shader_path = Resolver::new(&shader).resolve()?;
         hyprctl::shader::set(&shader_path)?;
 
         Ok(ExitCode::SUCCESS)
