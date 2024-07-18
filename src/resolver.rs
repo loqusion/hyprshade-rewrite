@@ -51,10 +51,7 @@ impl<'a> ResolverFromPath<'a> {
 
         match path.try_exists() {
             Ok(true) => Ok(path),
-            Ok(false) => Err(ResolverError::IoError(
-                path,
-                io::Error::new(io::ErrorKind::NotFound, "No such file or directory"),
-            )),
+            Ok(false) => Err(ResolverError::io_error_not_found(path)),
             Err(e) => Err(ResolverError::IoError(path, e)),
         }
     }
@@ -131,4 +128,13 @@ pub enum ResolverError {
     IoError(PathBuf, #[source] io::Error),
     #[error("Shader named {0:?} not found")]
     ShaderNameNotFound(String),
+}
+
+impl ResolverError {
+    fn io_error_not_found(path: PathBuf) -> Self {
+        Self::IoError(
+            path,
+            io::Error::new(io::ErrorKind::NotFound, "No such file or directory"),
+        )
+    }
 }
