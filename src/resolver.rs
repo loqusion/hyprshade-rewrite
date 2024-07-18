@@ -53,10 +53,18 @@ impl<'a> ResolverFromPath<'a> {
 impl<'a> ResolverFromName<'a> {
     fn resolve(&self) -> Result<PathBuf, ResolverError> {
         for dir in Self::all_dirs() {
-            eprintln!("{dir:?}");
+            if let Some(path) = self.resolve_in(&dir) {
+                return Ok(path);
+            }
         }
 
-        todo!()
+        todo!("ResolverFromName::resolve");
+    }
+
+    fn resolve_in(&self, dir: &Path) -> Option<PathBuf> {
+        eprintln!("{dir:?}");
+
+        None
     }
 
     fn all_dirs() -> Vec<PathBuf> {
