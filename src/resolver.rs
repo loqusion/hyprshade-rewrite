@@ -43,7 +43,7 @@ impl<'a> Resolver<'a> {
     }
 }
 
-impl<'a> ResolverFromPath<'a> {
+impl ResolverFromPath<'_> {
     #[tracing::instrument(level = "debug", skip(self), fields(path = ?self.0))]
     fn resolve(&self) -> Result<PathBuf, ResolverError> {
         let Self(path) = *self;
@@ -57,7 +57,7 @@ impl<'a> ResolverFromPath<'a> {
     }
 }
 
-impl<'a> ResolverFromName<'a> {
+impl ResolverFromName<'_> {
     #[tracing::instrument(level = "debug", skip(self), fields(name = ?self.0.to_string_lossy()))]
     fn resolve(&self) -> Result<PathBuf, ResolverError> {
         for dir in Self::all_dirs() {
