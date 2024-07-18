@@ -1,6 +1,7 @@
 mod cli;
 mod hyprctl;
 mod resolver;
+mod util;
 
 use std::process::ExitCode;
 
