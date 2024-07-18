@@ -109,10 +109,10 @@ impl<'a> ResolverFromName<'a> {
 
     fn all_dirs() -> Vec<PathBuf> {
         [
-            env::var("HYPRSHADE_SHADERS_DIR").map(PathBuf::from).ok(),
             ProjectDirs::from("", "", "hypr").map(|p| p.config_dir().to_path_buf().join("shaders")),
             ProjectDirs::from("", "", env!("CARGO_PKG_NAME"))
                 .map(|p| p.config_dir().to_path_buf().join("shaders")),
+            env::var("HYPRSHADE_SHADERS_DIR").map(PathBuf::from).ok(),
             Some([SYSTEM_HYPRSHADE_DIR, "shaders"].iter().collect()),
         ]
         .into_iter()
