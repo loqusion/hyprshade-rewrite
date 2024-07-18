@@ -44,6 +44,7 @@ impl<'a> Resolver<'a> {
 }
 
 impl<'a> ResolverFromPath<'a> {
+    #[tracing::instrument(level = "debug", skip(self), fields(path = ?self.0))]
     fn resolve(&self) -> Result<PathBuf, ResolverError> {
         let Self(path) = *self;
         let path = path.to_path_buf();
@@ -60,6 +61,7 @@ impl<'a> ResolverFromPath<'a> {
 }
 
 impl<'a> ResolverFromName<'a> {
+    #[tracing::instrument(level = "debug", skip(self), fields(name = ?self.0.to_string_lossy()))]
     fn resolve(&self) -> Result<PathBuf, ResolverError> {
         for dir in Self::all_dirs() {
             if let Some(path) = self.resolve_in(&dir) {
@@ -72,11 +74,12 @@ impl<'a> ResolverFromName<'a> {
         ))
     }
 
+    #[tracing::instrument(level = "debug", skip(self), fields(name = ?self.0.to_string_lossy(), ?dir))]
     fn resolve_in(&self, dir: &Path) -> Option<PathBuf> {
         let Self(name) = *self;
 
         if !dir.is_dir() {
-            trace!("Not a directory: {dir:?}");
+            debug!("Not a directory: {dir:?}");
             return None;
         }
 
