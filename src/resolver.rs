@@ -10,12 +10,12 @@ const SYSTEM_HYPRSHADE_DIR: &str = concat!("/usr/share/", env!("CARGO_PKG_NAME")
 pub struct Resolver<'a>(ResolverInner<'a>);
 
 enum ResolverInner<'a> {
-    FromName(ResolverFromName<'a>),
     FromPath(ResolverFromPath<'a>),
+    FromName(ResolverFromName<'a>),
 }
 
-struct ResolverFromName<'a>(&'a str);
 struct ResolverFromPath<'a>(&'a Path);
+struct ResolverFromName<'a>(&'a str);
 
 impl<'a> Resolver<'a> {
     pub fn new(shader: &'a str) -> Self {
@@ -28,8 +28,24 @@ impl<'a> Resolver<'a> {
 
     pub fn resolve(&self) -> Result<PathBuf, ResolverError> {
         match &self.0 {
-            ResolverInner::FromName(r) => r.resolve(),
             ResolverInner::FromPath(r) => r.resolve(),
+            ResolverInner::FromName(r) => r.resolve(),
+        }
+    }
+}
+
+impl<'a> ResolverFromPath<'a> {
+    fn resolve(&self) -> Result<PathBuf, ResolverError> {
+        let Self(path) = self;
+        let path = path.to_path_buf();
+
+        match path.try_exists() {
+            Ok(true) => Ok(path),
+            Ok(false) => Err(ResolverError::IoError(
+                path,
+                io::Error::new(io::ErrorKind::NotFound, "No such file or directory"),
+            )),
+            Err(e) => Err(ResolverError::IoError(path, e)),
         }
     }
 }
@@ -54,22 +70,6 @@ impl<'a> ResolverFromName<'a> {
         .into_iter()
         .flatten()
         .collect()
-    }
-}
-
-impl<'a> ResolverFromPath<'a> {
-    fn resolve(&self) -> Result<PathBuf, ResolverError> {
-        let Self(path) = self;
-        let path = path.to_path_buf();
-
-        match path.try_exists() {
-            Ok(true) => Ok(path),
-            Ok(false) => Err(ResolverError::IoError(
-                path,
-                io::Error::new(io::ErrorKind::NotFound, "No such file or directory"),
-            )),
-            Err(e) => Err(ResolverError::IoError(path, e)),
-        }
     }
 }
 
