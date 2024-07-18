@@ -7,11 +7,12 @@ use directories::ProjectDirs;
 
 const SYSTEM_HYPRSHADE_DIR: &str = concat!("/usr/share/", env!("CARGO_PKG_NAME"));
 
-trait ResolverTrait {
-    fn resolve(&self) -> Result<PathBuf, ResolverError>;
-}
+pub struct Resolver<'a>(ResolverInner<'a>);
 
-pub struct Resolver<'a>(Box<dyn ResolverTrait + 'a>);
+enum ResolverInner<'a> {
+    FromName(ResolverFromName<'a>),
+    FromPath(ResolverFromPath<'a>),
+}
 
 struct ResolverFromName<'a>(&'a str);
 struct ResolverFromPath<'a>(&'a Path);
@@ -19,18 +20,29 @@ struct ResolverFromPath<'a>(&'a Path);
 impl<'a> Resolver<'a> {
     pub fn new(shader: &'a str) -> Self {
         if shader.contains(MAIN_SEPARATOR) {
-            Self(Box::new(ResolverFromPath(Path::new(shader))))
+            Self(ResolverInner::FromPath(ResolverFromPath(Path::new(shader))))
         } else {
-            Self(Box::new(ResolverFromName(shader)))
+            Self(ResolverInner::FromName(ResolverFromName(shader)))
         }
     }
 
     pub fn resolve(&self) -> Result<PathBuf, ResolverError> {
-        self.0.resolve()
+        match &self.0 {
+            ResolverInner::FromName(r) => r.resolve(),
+            ResolverInner::FromPath(r) => r.resolve(),
+        }
     }
 }
 
 impl<'a> ResolverFromName<'a> {
+    fn resolve(&self) -> Result<PathBuf, ResolverError> {
+        for dir in Self::all_dirs() {
+            eprintln!("{dir:?}");
+        }
+
+        todo!()
+    }
+
     fn all_dirs() -> Vec<PathBuf> {
         [
             env::var("HYPRSHADE_SHADERS_DIR").map(PathBuf::from).ok(),
@@ -45,17 +57,7 @@ impl<'a> ResolverFromName<'a> {
     }
 }
 
-impl<'a> ResolverTrait for ResolverFromName<'a> {
-    fn resolve(&self) -> Result<PathBuf, ResolverError> {
-        for dir in Self::all_dirs() {
-            eprintln!("{dir:?}");
-        }
-
-        todo!()
-    }
-}
-
-impl<'a> ResolverTrait for ResolverFromPath<'a> {
+impl<'a> ResolverFromPath<'a> {
     fn resolve(&self) -> Result<PathBuf, ResolverError> {
         let Self(path) = self;
         let path = path.to_path_buf();
