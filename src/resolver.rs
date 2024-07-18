@@ -6,18 +6,14 @@ use std::{
 pub fn resolve(shader: &str) -> Result<PathBuf, ResolverError> {
     if shader.contains(MAIN_SEPARATOR) {
         let path = PathBuf::from(shader);
-        let path_exists = match path.try_exists() {
-            Ok(exists) => exists,
-            Err(e) => return Err(ResolverError::IoError(path, e)),
-        };
 
-        if path_exists {
-            Ok(path)
-        } else {
-            Err(ResolverError::IoError(
+        match path.try_exists() {
+            Ok(true) => Ok(path),
+            Ok(false) => Err(ResolverError::IoError(
                 path,
                 io::Error::new(io::ErrorKind::NotFound, "No such file or directory"),
-            ))
+            )),
+            Err(e) => Err(ResolverError::IoError(path, e)),
         }
     } else {
         resolve_from_name(shader)
