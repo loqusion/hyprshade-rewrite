@@ -1,11 +1,18 @@
 use std::{
-    env, io,
+    env,
+    ffi::OsStr,
+    io,
     path::{Path, PathBuf, MAIN_SEPARATOR},
 };
 
+use crate::util::PathExt;
 use directories::ProjectDirs;
+use tracing::{debug, trace};
+use walkdir::WalkDir;
 
 const SYSTEM_HYPRSHADE_DIR: &str = concat!("/usr/share/", env!("CARGO_PKG_NAME"));
+
+const MAX_DEPTH: usize = 10;
 
 pub struct Resolver<'a>(ResolverInner<'a>);
 
@@ -15,14 +22,16 @@ enum ResolverInner<'a> {
 }
 
 struct ResolverFromPath<'a>(&'a Path);
-struct ResolverFromName<'a>(&'a str);
+struct ResolverFromName<'a>(&'a OsStr);
 
 impl<'a> Resolver<'a> {
     pub fn new(shader: &'a str) -> Self {
         if shader.contains(MAIN_SEPARATOR) {
             Self(ResolverInner::FromPath(ResolverFromPath(Path::new(shader))))
         } else {
-            Self(ResolverInner::FromName(ResolverFromName(shader)))
+            Self(ResolverInner::FromName(ResolverFromName(OsStr::new(
+                shader,
+            ))))
         }
     }
 
@@ -36,7 +45,7 @@ impl<'a> Resolver<'a> {
 
 impl<'a> ResolverFromPath<'a> {
     fn resolve(&self) -> Result<PathBuf, ResolverError> {
-        let Self(path) = self;
+        let Self(path) = *self;
         let path = path.to_path_buf();
 
         match path.try_exists() {
@@ -58,11 +67,42 @@ impl<'a> ResolverFromName<'a> {
             }
         }
 
-        todo!("ResolverFromName::resolve");
+        Err(ResolverError::ShaderNameNotFound(
+            self.0.to_string_lossy().into_owned(),
+        ))
     }
 
     fn resolve_in(&self, dir: &Path) -> Option<PathBuf> {
-        eprintln!("{dir:?}");
+        let Self(name) = *self;
+
+        if !dir.is_dir() {
+            trace!("Not a directory: {dir:?}");
+            return None;
+        }
+
+        trace!("Searching for {name:?} in {dir:?}");
+
+        for entry in WalkDir::new(dir)
+            .max_depth(MAX_DEPTH)
+            .into_iter()
+            .filter_map(|e| {
+                e.inspect_err(|err| {
+                    debug!("Ignoring error encountered when walking directory {dir:?}");
+                    debug!(?err);
+                })
+                .ok()
+                .and_then(|e| e.file_type().is_file().then_some(e))
+            })
+        {
+            trace!("Checking {entry:?}");
+
+            let prefix = PathExt::file_prefix(entry.path());
+            if Some(name) == prefix {
+                trace!("Entry matches {name:?}");
+
+                return Some(entry.into_path());
+            }
+        }
 
         None
     }
@@ -84,6 +124,8 @@ impl<'a> ResolverFromName<'a> {
 #[non_exhaustive]
 #[derive(thiserror::Error, Debug)]
 pub enum ResolverError {
-    #[error("Could not read path {0}")]
+    #[error("Could not read path {0:?}")]
     IoError(PathBuf, #[source] io::Error),
+    #[error("Shader named {0:?} not found")]
+    ShaderNameNotFound(String),
 }
