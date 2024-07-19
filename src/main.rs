@@ -19,3 +19,6 @@ fn main() -> eyre::Result<ExitCode> {
 
     cli.execute()
 }
+
+#[cfg(not(target_os = "linux"))]
+compile_error!("target os must be linux");
