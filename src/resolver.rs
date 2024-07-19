@@ -6,6 +6,7 @@ use std::{
 };
 
 use crate::util::PathExt;
+use derive_more::From;
 use directories::ProjectDirs;
 use tracing::{debug, trace};
 use walkdir::WalkDir;
@@ -16,6 +17,7 @@ const MAX_DEPTH: usize = 10;
 
 pub struct Resolver<'a>(ResolverInner<'a>);
 
+#[derive(From)]
 enum ResolverInner<'a> {
     FromPath(ResolverFromPath<'a>),
     FromName(ResolverFromName<'a>),
@@ -27,11 +29,9 @@ struct ResolverFromName<'a>(&'a OsStr);
 impl<'a> Resolver<'a> {
     pub fn new(shader: &'a str) -> Self {
         if shader.contains(MAIN_SEPARATOR) {
-            Self(ResolverInner::FromPath(ResolverFromPath(Path::new(shader))))
+            Self(ResolverFromPath(Path::new(shader)).into())
         } else {
-            Self(ResolverInner::FromName(ResolverFromName(OsStr::new(
-                shader,
-            ))))
+            Self(ResolverFromName(OsStr::new(shader)).into())
         }
     }
 
