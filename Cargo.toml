@@ -9,6 +9,7 @@ repository = "https://github.com/loqusion/hyprshade"
 clap = { version = "4.5.8", features = ["cargo", "derive", "wrap_help"] }
 clap_derive = "4.5.8"
 color-eyre = "0.6.3"
+derive_more = "0.99.18"
 directories = "5.0.1"
 eyre = "0.6.12"
 mustache = "0.9.0"
