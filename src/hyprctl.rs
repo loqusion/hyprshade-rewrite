@@ -5,10 +5,7 @@ use std::{
     process::{Command, Output, Stdio},
 };
 
-use color_eyre::{
-    eyre::{eyre, WrapErr},
-    Section, SectionExt,
-};
+use color_eyre::{Section, SectionExt};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub const PROGRAM_NAME: &str = "hyprctl";
@@ -86,31 +83,26 @@ trait OutputExt {
 
 impl OutputExt for Command {
     fn output_with_check(&mut self) -> eyre::Result<Output> {
-        let output = self
-            .output()
-            .map_err(|err| {
-                if err.kind() == io::ErrorKind::NotFound {
-                    eyre::Report::new(err)
-                        .with_suggestion(|| format!("Is {PROGRAM_NAME} located in your PATH?"))
-                } else {
-                    err.into()
-                }
-            })
-            .wrap_err_with(|| format!("failed to execute {PROGRAM_NAME}"))?;
+        let output = self.output().map_err(|err| {
+            if err.kind() == io::ErrorKind::NotFound {
+                eyre::Report::from(Error::Io(err))
+                    .with_suggestion(|| format!("Is {PROGRAM_NAME} located in your PATH?"))
+            } else {
+                Error::Io(err).into()
+            }
+        })?;
 
         if output.status.success() {
             Ok(output)
         } else if let Some(signal) = output.status.signal() {
-            Err(eyre!("{PROGRAM_NAME} terminated by signal {signal}"))
+            Err(Error::Signal(signal).into())
         } else {
-            let err = if let Some(code) = output.status.code() {
-                Err(eyre!("{PROGRAM_NAME} terminated with exit code {code}"))
+            let err: eyre::Report = if let Some(code) = output.status.code() {
+                Error::ExitCode(code).into()
             } else {
-                Err(eyre!(
-                    "{PROGRAM_NAME} terminated unsuccessfully (unknown cause)"
-                ))
+                Error::Unknown.into()
             };
-            err.command_sections(self, &output)
+            Err(err).command_sections(self, &output)
         }
     }
 }
@@ -123,7 +115,7 @@ impl JsonExt for Command {
     fn json<T: DeserializeOwned>(&mut self) -> eyre::Result<T> {
         let output = self.output_with_check()?;
         let value = serde_json::from_slice(&output.stdout)
-            .wrap_err_with(|| format!("failed to parse JSON returned by {PROGRAM_NAME}"))
+            .map_err(Error::SerdeJson)
             .command_sections(self, &output)
             .suggestion("This is likely a bug in Hyprland. Go bug Vaxry about it (nicely :))")?;
 
@@ -154,6 +146,21 @@ where
                     .header("Stderr:")
             })
     }
+}
+
+#[non_exhaustive]
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("failed to execute {PROGRAM_NAME}")]
+    Io(#[from] io::Error),
+    #[error("failed to parse JSON returned by {PROGRAM_NAME}")]
+    SerdeJson(#[from] serde_json::Error),
+    #[error("{PROGRAM_NAME} terminated by signal {0}")]
+    Signal(i32),
+    #[error("{PROGRAM_NAME} terminated with exit code {0}")]
+    ExitCode(i32),
+    #[error("{PROGRAM_NAME} terminated unsuccessfully (unknown cause)")]
+    Unknown,
 }
 
 #[cfg(test)]
