@@ -17,6 +17,7 @@ pub mod shader {
     use std::{ffi::OsStr, path::Path};
 
     use super::{hyprctl_command, HyprctlOption, JsonExt, OutputExt, SHADER_EMPTY_STRING};
+    use color_eyre::eyre::WrapErr;
 
     const VARIABLE_NAME: &str = "decoration:screen_shader";
 
@@ -24,19 +25,20 @@ pub mod shader {
     pub fn get() -> eyre::Result<Option<String>> {
         let option = hyprctl_command()
             .args(["-j", "getoption", VARIABLE_NAME])
-            .json::<HyprctlOption>()?;
+            .json::<HyprctlOption>()
+            .wrap_err("failed to find current screen shader")?;
 
         Ok(option.into_value())
     }
 
     #[tracing::instrument(level = "debug")]
     pub fn set(shader_path: &Path) -> eyre::Result<()> {
-        _set(shader_path.as_os_str())
+        _set(shader_path.as_os_str()).wrap_err("failed to set screen shader")
     }
 
     #[tracing::instrument(level = "debug")]
     pub fn clear() -> eyre::Result<()> {
-        _set(SHADER_EMPTY_STRING.as_ref())
+        _set(SHADER_EMPTY_STRING.as_ref()).wrap_err("failed to turn off screen shader")
     }
 
     #[tracing::instrument(level = "debug")]
