@@ -196,6 +196,6 @@ mod tests {
             .args(["{"])
             .json::<serde_json::Value>()
             .unwrap_err();
-        assert!(err.downcast_ref::<serde_json::Error>().is_some());
+        assert!(err.downcast_ref::<Error>().is_some());
     }
 }
