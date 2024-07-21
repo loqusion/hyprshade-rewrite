@@ -1,3 +1,4 @@
+mod builtin;
 mod cli;
 mod hyprctl;
 mod resolver;
