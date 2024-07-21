@@ -1,27 +1,27 @@
 use std::ffi::OsStr;
 
-pub trait PathExt {
-    fn file_prefix(&self) -> Option<&OsStr>;
-    fn extension(&self) -> Option<&OsStr>;
-}
-
-impl PathExt for std::path::Path {
+pub trait PathExt: AsRef<std::path::Path> {
     #[must_use]
     fn file_prefix(&self) -> Option<&OsStr> {
-        self.file_name()
+        self.as_ref()
+            .file_name()
             .map(split_file_at_dot)
             .map(|(before, _after)| before)
     }
     #[must_use]
     fn extension(&self) -> Option<&OsStr> {
-        self.file_name()
+        self.as_ref()
+            .file_name()
             .map(rsplit_file_at_dot)
             .and_then(|(before, after)| before.and(after))
     }
 }
 
+impl PathExt for std::path::Path {}
+impl PathExt for std::path::PathBuf {}
+
 // basic workhorse for splitting stem and extension
-fn rsplit_file_at_dot(file: &OsStr) -> (Option<&OsStr>, Option<&OsStr>) {
+pub fn rsplit_file_at_dot(file: &OsStr) -> (Option<&OsStr>, Option<&OsStr>) {
     if file.as_encoded_bytes() == b".." {
         return (Some(file), None);
     }
