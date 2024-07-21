@@ -1,6 +1,9 @@
 use std::process::ExitCode;
 
-use crate::cli::{common::SHADER_HELP, CommandExecute};
+use crate::{
+    cli::{common::SHADER_HELP, CommandExecute},
+    shader::{OnOrOff, Shader},
+};
 use clap::Parser;
 use color_eyre::eyre::eyre;
 
@@ -11,13 +14,49 @@ TODO: write help text
 pub struct Toggle {
     #[arg(help = SHADER_HELP)]
     shader: Option<String>,
+    #[arg(long)]
+    fallback: Option<String>,
+    #[arg(long)]
+    fallback_default: bool,
+    #[arg(long)]
+    fallback_auto: bool,
 }
 
 impl CommandExecute for Toggle {
     #[tracing::instrument(level = "debug", skip_all)]
     fn execute(self) -> eyre::Result<ExitCode> {
-        let Toggle { shader: _ } = self;
+        let Toggle {
+            shader,
+            fallback,
+            fallback_default,
+            fallback_auto,
+        } = self;
 
-        Err(eyre!("Not implemented"))
+        let fallback = match (&fallback, fallback_default, fallback_auto) {
+            (None, false, false) => None,
+            (Some(fallback), false, false) => Some(Shader::from_cli_arg(fallback)),
+            (None, true, false) => todo!("getting default shader from config"),
+            (None, false, true) => todo!("getting scheduled shader from config"),
+            _ => {
+                return Err(eyre!(
+                    "only one of --fallback, --fallback-default, or --fallback-auto can be used"
+                ))
+            }
+        };
+
+        let shader = match &shader {
+            Some(shader) => Some(Shader::from_cli_arg(shader)),
+            None => todo!("shader inference from config"),
+        };
+
+        let current_shader = Shader::current()?;
+
+        if shader == current_shader {
+            fallback.on_or_off()?;
+        } else {
+            shader.on_or_off()?;
+        }
+
+        Ok(ExitCode::SUCCESS)
     }
 }

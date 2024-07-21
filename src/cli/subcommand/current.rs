@@ -1,7 +1,6 @@
 use std::process::ExitCode;
 
-use crate::cli::CommandExecute;
-use crate::hyprctl;
+use crate::{cli::CommandExecute, shader::Shader};
 use clap::Parser;
 use tracing::warn;
 
@@ -14,10 +13,8 @@ pub struct Current;
 impl CommandExecute for Current {
     #[tracing::instrument(level = "debug", skip_all)]
     fn execute(self) -> eyre::Result<ExitCode> {
-        warn!("Implementation is incomlete");
-
-        if let Some(shader_path) = hyprctl::shader::get()? {
-            println!("{shader_path}")
+        if let Some(shader) = Shader::current()? {
+            println!("{}", shader);
         }
 
         Ok(ExitCode::SUCCESS)
