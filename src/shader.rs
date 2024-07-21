@@ -28,10 +28,7 @@ impl<'a> Shader<'a> {
 
     pub fn current() -> eyre::Result<Option<Self>> {
         match hyprctl::shader::get()? {
-            Some(shader) => {
-                let path_buf = PathBuf::from(&shader);
-                Ok(Some(Self(ShaderInner::FromOwnedPath(path_buf))))
-            }
+            Some(path) => Ok(Some(Self(ShaderInner::FromOwnedPath(path)))),
             None => Ok(None),
         }
     }
