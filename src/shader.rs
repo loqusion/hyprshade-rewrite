@@ -1,9 +1,13 @@
+#![allow(clippy::enum_variant_names)]
+
 use std::{
     ffi::OsStr,
     path::{Path, PathBuf, MAIN_SEPARATOR},
 };
 
-use crate::hyprctl;
+use crate::{hyprctl, resolver::Resolver, util::rsplit_file_at_dot};
+
+const TEMPLATE_EXTENSION: &str = "mustache";
 
 pub struct Shader<'a>(ShaderInner<'a>);
 
@@ -37,7 +41,14 @@ impl<'a> Shader<'a> {
     }
 
     pub fn on(&self) -> eyre::Result<()> {
-        todo!("Shader::on");
+        let path = Resolver::from(self).resolve()?;
+        let path = match path.file_name().map(rsplit_file_at_dot) {
+            Some((Some(_prefix), Some(extension))) if extension == TEMPLATE_EXTENSION => {
+                todo!("Shader::on template shaders");
+            }
+            _ => path,
+        };
+        hyprctl::shader::set(&path)
     }
 }
 
@@ -50,6 +61,16 @@ impl std::fmt::Display for Shader<'_> {
 impl PartialEq for Shader<'_> {
     fn eq(&self, other: &Self) -> bool {
         todo!("PartialEq for Shader")
+    }
+}
+
+impl<'a> From<&'a Shader<'a>> for Resolver<'a> {
+    fn from(value: &'a Shader<'a>) -> Self {
+        match &value.0 {
+            ShaderInner::FromPath(path) => Resolver::from_path(path),
+            ShaderInner::FromOwnedPath(path) => Resolver::from_path(path),
+            ShaderInner::FromName(name) => Resolver::from_name(name),
+        }
     }
 }
 

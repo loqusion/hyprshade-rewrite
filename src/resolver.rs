@@ -29,10 +29,18 @@ struct ResolverFromName<'a>(&'a OsStr);
 impl<'a> Resolver<'a> {
     pub fn new(shader: &'a str) -> Self {
         if shader.contains(MAIN_SEPARATOR) {
-            Self(ResolverFromPath(Path::new(shader)).into())
+            Self::from_path(Path::new(shader))
         } else {
-            Self(ResolverFromName(OsStr::new(shader)).into())
+            Self::from_name(OsStr::new(shader))
         }
+    }
+
+    pub fn from_path(path: &'a Path) -> Self {
+        Self(ResolverFromPath(path).into())
+    }
+
+    pub fn from_name(name: &'a OsStr) -> Self {
+        Self(ResolverFromName(name).into())
     }
 
     pub fn resolve(&self) -> Result<PathBuf, ResolverError> {
