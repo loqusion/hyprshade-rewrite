@@ -11,6 +11,7 @@ use directories::ProjectDirs;
 use tracing::{debug, trace};
 use walkdir::WalkDir;
 
+#[cfg(feature = "compat")]
 const SYSTEM_HYPRSHADE_DIR: &str = concat!("/usr/share/", env!("CARGO_PKG_NAME"));
 
 const MAX_DEPTH: usize = 10;
@@ -128,6 +129,7 @@ impl ResolverFromName<'_> {
             ProjectDirs::from("", "", env!("CARGO_PKG_NAME"))
                 .map(|p| p.config_dir().to_path_buf().join("shaders")),
             env::var("HYPRSHADE_SHADERS_DIR").map(PathBuf::from).ok(),
+            #[cfg(feature = "compat")]
             Some([SYSTEM_HYPRSHADE_DIR, "shaders"].iter().collect()),
         ]
         .into_iter()
