@@ -1,5 +1,7 @@
 use phf::phf_map;
 
+pub struct BuiltinShaders(phf::Map<&'static [u8], BuiltinShader>);
+
 #[derive(Debug)]
 pub struct BuiltinShader {
     pub contents: &'static str,
@@ -21,8 +23,8 @@ pub enum Variable {
     Dict(phf::Map<&'static str, Variable>),
 }
 
-pub const BUILTIN_SHADERS: phf::Map<&'static str, BuiltinShader> = phf_map! {
-    "blue-light-filter" => BuiltinShader {
+pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {
+    b"blue-light-filter" => BuiltinShader {
         contents: include_str!("shaders/blue-light-filter.glsl.mustache"),
         is_template: true,
         metadata: Metadata {
@@ -42,7 +44,7 @@ pub const BUILTIN_SHADERS: phf::Map<&'static str, BuiltinShader> = phf_map! {
             },
         },
     },
-    "color-filter" => BuiltinShader {
+    b"color-filter" => BuiltinShader {
         contents: include_str!("shaders/color-filter.glsl.mustache"),
         is_template: true,
         metadata: Metadata {
@@ -71,7 +73,7 @@ pub const BUILTIN_SHADERS: phf::Map<&'static str, BuiltinShader> = phf_map! {
             },
         },
     },
-    "grayscale" => BuiltinShader {
+    b"grayscale" => BuiltinShader {
         contents: include_str!("shaders/grayscale.glsl.mustache"),
         is_template: true,
         metadata: Metadata {
@@ -83,7 +85,7 @@ pub const BUILTIN_SHADERS: phf::Map<&'static str, BuiltinShader> = phf_map! {
             },
         },
     },
-    "invert-colors" => BuiltinShader {
+    b"invert-colors" => BuiltinShader {
         contents: include_str!("shaders/invert-colors.glsl"),
         is_template: false,
         metadata: Metadata {
@@ -92,7 +94,7 @@ pub const BUILTIN_SHADERS: phf::Map<&'static str, BuiltinShader> = phf_map! {
             variables: phf_map! {},
         },
     },
-    "vibrance" => BuiltinShader {
+    b"vibrance" => BuiltinShader {
         contents: include_str!("shaders/vibrance.glsl.mustache"),
         is_template: true,
         metadata: Metadata {
@@ -124,4 +126,4 @@ pub const BUILTIN_SHADERS: phf::Map<&'static str, BuiltinShader> = phf_map! {
             },
         },
     },
-};
+});
