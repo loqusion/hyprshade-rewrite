@@ -13,26 +13,13 @@ uniform sampler2D tex;
 
 // see https://github.com/CeeJayDK/SweetFX/blob/a792aee788c6203385a858ebdea82a77f81c67f0/Shaders/Vibrance.fx#L20-L30
 
-/**
- * Per-channel multiplier to vibrance strength.
- *
- * @min 0.0
- * @max 10.0
- */
 const vec3 Balance = vec3(
-    float({{#nc}}{{balance.red}} ? 1.0{{/nc}}),
-    float({{#nc}}{{balance.green}} ? 1.0{{/nc}}),
-    float({{#nc}}{{balance.blue}} ? 1.0{{/nc}})
-);
+    {{balance.red}},
+    {{balance.green}},
+    {{balance.blue}}
+)
 
-/**
- * Strength of filter.
- * (Negative values will reduce vibrance.)
- *
- * @min -1.0
- * @max 1.0
- */
-const float Strength = float({{#nc}}{{strength}} ? 0.15{{/nc}});
+const float Strength = {{strength}};
 
 const vec3 VIB_coeffVibrance = Balance * -Strength;
 
