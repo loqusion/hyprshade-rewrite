@@ -21,7 +21,7 @@ impl CommandExecute for On {
     fn execute(self) -> eyre::Result<ExitCode> {
         let On { shader } = self;
 
-        let shader = Resolver::from_cli_arg(&shader).resolve()?;
+        let shader = Resolver::with_cli_arg(&shader).resolve()?;
         shader.on()?;
 
         Ok(ExitCode::SUCCESS)

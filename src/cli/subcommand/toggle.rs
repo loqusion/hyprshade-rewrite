@@ -35,7 +35,7 @@ impl CommandExecute for Toggle {
 
         let fallback = match (&fallback, fallback_default, fallback_auto) {
             (None, false, false) => None,
-            (Some(fallback), false, false) => Some(Resolver::from_cli_arg(fallback).resolve()?),
+            (Some(fallback), false, false) => Some(Resolver::with_cli_arg(fallback).resolve()?),
             (None, true, false) => todo!("getting default shader from config"),
             (None, false, true) => todo!("getting scheduled shader from config"),
             _ => {
@@ -46,7 +46,7 @@ impl CommandExecute for Toggle {
         };
 
         let shader = match &shader {
-            Some(shader) => Some(Resolver::from_cli_arg(shader).resolve()?),
+            Some(shader) => Some(Resolver::with_cli_arg(shader).resolve()?),
             None => todo!("shader inference from config"),
         };
 

@@ -18,39 +18,39 @@ const MAX_DEPTH: usize = 10;
 pub struct Resolver<'a>(ResolverInner<'a>);
 
 enum ResolverInner<'a> {
-    FromPath(ResolverFromPath<'a>),
-    FromName(ResolverFromName<'a>),
+    WithPath(ResolverWithPath<'a>),
+    WithName(ResolverWithName<'a>),
 }
 
-struct ResolverFromPath<'a>(&'a Path);
-struct ResolverFromName<'a>(&'a OsStr);
+struct ResolverWithPath<'a>(&'a Path);
+struct ResolverWithName<'a>(&'a OsStr);
 
 impl<'a> Resolver<'a> {
-    pub fn from_cli_arg(shader: &'a str) -> Self {
+    pub fn with_cli_arg(shader: &'a str) -> Self {
         if shader.contains(MAIN_SEPARATOR) {
-            Self::from_path(Path::new(shader))
+            Self::with_path(Path::new(shader))
         } else {
-            Self::from_name(OsStr::new(shader))
+            Self::with_name(OsStr::new(shader))
         }
     }
 
-    pub fn from_path(path: &'a Path) -> Self {
-        Self(ResolverInner::FromPath(ResolverFromPath(path)))
+    pub fn with_path(path: &'a Path) -> Self {
+        Self(ResolverInner::WithPath(ResolverWithPath(path)))
     }
 
-    pub fn from_name(name: &'a OsStr) -> Self {
-        Self(ResolverInner::FromName(ResolverFromName(name)))
+    pub fn with_name(name: &'a OsStr) -> Self {
+        Self(ResolverInner::WithName(ResolverWithName(name)))
     }
 
     pub fn resolve(self) -> Result<Shader, ResolverError> {
         match self.0 {
-            ResolverInner::FromPath(r) => r.resolve(),
-            ResolverInner::FromName(r) => r.resolve(),
+            ResolverInner::WithPath(r) => r.resolve(),
+            ResolverInner::WithName(r) => r.resolve(),
         }
     }
 }
 
-impl ResolverFromPath<'_> {
+impl ResolverWithPath<'_> {
     #[tracing::instrument(level = "debug", skip(self), fields(path = ?self.0))]
     fn resolve(self) -> Result<Shader, ResolverError> {
         let Self(path) = self;
@@ -63,7 +63,7 @@ impl ResolverFromPath<'_> {
     }
 }
 
-impl ResolverFromName<'_> {
+impl ResolverWithName<'_> {
     #[tracing::instrument(level = "debug", skip(self), fields(name = ?self.0.to_string_lossy()))]
     fn resolve(self) -> Result<Shader, ResolverError> {
         let Self(name) = self;
