@@ -22,7 +22,12 @@ impl Shader {
 
     pub fn current() -> eyre::Result<Option<Self>> {
         match hyprctl::shader::get()? {
-            Some(path) => Ok(Some(Self(ShaderInner::Path(path)))),
+            Some(path) => {
+                // FIXME: This is incorrect, since it doesn't take into account template shader
+                // instances. The `Shader` instance should point to the template file (i.e.
+                // *.glsl.mustache), not the template instance (i.e. *.glsl).
+                Ok(Some(Self(ShaderInner::Path(path))))
+            }
             None => Ok(None),
         }
     }
