@@ -42,7 +42,7 @@ impl<'a> Resolver<'a> {
         Self(ResolverInner::WithName(ResolverWithName(name)))
     }
 
-    pub fn resolve(self) -> Result<Shader, ResolverError> {
+    pub fn resolve(self) -> Result<Shader, Error> {
         match self.0 {
             ResolverInner::WithPath(r) => r.resolve(),
             ResolverInner::WithName(r) => r.resolve(),
@@ -52,20 +52,20 @@ impl<'a> Resolver<'a> {
 
 impl ResolverWithPath<'_> {
     #[tracing::instrument(level = "debug", skip(self), fields(path = ?self.0))]
-    fn resolve(self) -> Result<Shader, ResolverError> {
+    fn resolve(self) -> Result<Shader, Error> {
         let Self(path) = self;
 
         match path.try_exists() {
             Ok(true) => Ok(Shader::from_path_buf(path.to_path_buf())),
-            Ok(false) => Err(ResolverError::io_error_not_found(path.to_path_buf())),
-            Err(e) => Err(ResolverError::IoError(path.to_path_buf(), e)),
+            Ok(false) => Err(Error::io_error_not_found(path.to_path_buf())),
+            Err(e) => Err(Error::IoError(path.to_path_buf(), e)),
         }
     }
 }
 
 impl ResolverWithName<'_> {
     #[tracing::instrument(level = "debug", skip(self), fields(name = ?self.0.to_string_lossy()))]
-    fn resolve(self) -> Result<Shader, ResolverError> {
+    fn resolve(self) -> Result<Shader, Error> {
         let Self(name) = self;
 
         for dir in Self::all_dirs() {
@@ -80,7 +80,7 @@ impl ResolverWithName<'_> {
             return Ok(Shader::from_builtin(builtin_shader));
         }
 
-        Err(ResolverError::ShaderNameNotFound(
+        Err(Error::ShaderNameNotFound(
             self.0.to_string_lossy().into_owned(),
         ))
     }
@@ -138,14 +138,14 @@ impl ResolverWithName<'_> {
 
 #[non_exhaustive]
 #[derive(thiserror::Error, Debug)]
-pub enum ResolverError {
+pub enum Error {
     #[error("Could not read path {0:?}")]
     IoError(PathBuf, #[source] io::Error),
     #[error("Shader named {0:?} not found")]
     ShaderNameNotFound(String),
 }
 
-impl ResolverError {
+impl Error {
     fn io_error_not_found(path: PathBuf) -> Self {
         Self::IoError(
             path,
