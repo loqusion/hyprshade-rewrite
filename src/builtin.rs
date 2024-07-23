@@ -33,9 +33,9 @@ pub enum Variable {
 }
 
 impl BuiltinShaders {
-    pub fn get<K>(&self, key: K) -> Option<&BuiltinShader>
+    pub fn get<K>(&self, key: &K) -> Option<&BuiltinShader>
     where
-        K: AsRef<[u8]>,
+        K: AsRef<[u8]> + ?Sized,
     {
         self.0.get(key.as_ref())
     }
