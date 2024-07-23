@@ -2,7 +2,7 @@ use std::process::ExitCode;
 
 use crate::{
     cli::{common::SHADER_HELP, CommandExecute},
-    shader::Shader,
+    resolver::Resolver,
 };
 use clap::Parser;
 use tracing::warn;
@@ -21,7 +21,8 @@ impl CommandExecute for On {
     fn execute(self) -> eyre::Result<ExitCode> {
         let On { shader } = self;
 
-        Shader::from_cli_arg(&shader).on()?;
+        let shader = Resolver::from_cli_arg(&shader).resolve()?;
+        shader.on()?;
 
         Ok(ExitCode::SUCCESS)
     }

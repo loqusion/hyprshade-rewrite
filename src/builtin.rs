@@ -4,16 +4,16 @@ pub struct BuiltinShaders(phf::Map<&'static [u8], BuiltinShader>);
 
 #[derive(Debug)]
 pub struct BuiltinShader {
-    pub contents: &'static str,
-    pub is_template: bool,
-    pub metadata: Metadata,
+    contents: &'static str,
+    is_template: bool,
+    metadata: Metadata,
 }
 
 #[derive(Debug)]
 pub struct Metadata {
-    pub full_name: &'static str,
-    pub description: &'static str,
-    pub variables: phf::Map<&'static str, Variable>,
+    full_name: &'static str,
+    description: &'static str,
+    variables: phf::Map<&'static str, Variable>,
 }
 
 #[derive(Debug)]
@@ -21,6 +21,21 @@ pub enum Variable {
     Float { default: f32, min: f32, max: f32 },
     Enum(&'static [&'static str]),
     Dict(phf::Map<&'static str, Variable>),
+}
+
+impl BuiltinShaders {
+    pub fn get<K>(&self, key: K) -> Option<&BuiltinShader>
+    where
+        K: AsRef<[u8]>,
+    {
+        self.0.get(key.as_ref())
+    }
+}
+
+impl BuiltinShader {
+    pub fn is_template(&self) -> bool {
+        self.is_template
+    }
 }
 
 pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {

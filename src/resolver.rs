@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf, MAIN_SEPARATOR},
 };
 
-use crate::util::PathExt;
+use crate::{builtin::BUILTIN_SHADERS, shader::Shader, util::PathExt};
 use derive_more::From;
 use directories::ProjectDirs;
 use tracing::{debug, trace};
@@ -27,7 +27,7 @@ struct ResolverFromPath<'a>(&'a Path);
 struct ResolverFromName<'a>(&'a OsStr);
 
 impl<'a> Resolver<'a> {
-    pub fn new(shader: &'a str) -> Self {
+    pub fn from_cli_arg(shader: &'a str) -> Self {
         if shader.contains(MAIN_SEPARATOR) {
             Self::from_path(Path::new(shader))
         } else {
@@ -43,8 +43,8 @@ impl<'a> Resolver<'a> {
         Self(ResolverFromName(name).into())
     }
 
-    pub fn resolve(&self) -> Result<PathBuf, ResolverError> {
-        match &self.0 {
+    pub fn resolve(self) -> Result<Shader, ResolverError> {
+        match self.0 {
             ResolverInner::FromPath(r) => r.resolve(),
             ResolverInner::FromName(r) => r.resolve(),
         }
@@ -53,25 +53,32 @@ impl<'a> Resolver<'a> {
 
 impl ResolverFromPath<'_> {
     #[tracing::instrument(level = "debug", skip(self), fields(path = ?self.0))]
-    fn resolve(&self) -> Result<PathBuf, ResolverError> {
-        let Self(path) = *self;
-        let path = path.to_path_buf();
+    fn resolve(self) -> Result<Shader, ResolverError> {
+        let Self(path) = self;
 
         match path.try_exists() {
-            Ok(true) => Ok(path),
-            Ok(false) => Err(ResolverError::io_error_not_found(path)),
-            Err(e) => Err(ResolverError::IoError(path, e)),
+            Ok(true) => Ok(Shader::from_path_buf(path.to_path_buf())),
+            Ok(false) => Err(ResolverError::io_error_not_found(path.to_path_buf())),
+            Err(e) => Err(ResolverError::IoError(path.to_path_buf(), e)),
         }
     }
 }
 
 impl ResolverFromName<'_> {
     #[tracing::instrument(level = "debug", skip(self), fields(name = ?self.0.to_string_lossy()))]
-    fn resolve(&self) -> Result<PathBuf, ResolverError> {
+    fn resolve(self) -> Result<Shader, ResolverError> {
+        let Self(name) = self;
+
         for dir in Self::all_dirs() {
             if let Some(path) = self.resolve_in(&dir) {
-                return Ok(path);
+                trace!("Resolved {name:?} to {path:?}");
+                return Ok(Shader::from_path_buf(path));
             }
+        }
+
+        if let Some(builtin_shader) = BUILTIN_SHADERS.get(name.as_encoded_bytes()) {
+            trace!("Resolved {name:?} to builtin shader");
+            return Ok(Shader::from_builtin(builtin_shader));
         }
 
         Err(ResolverError::ShaderNameNotFound(
