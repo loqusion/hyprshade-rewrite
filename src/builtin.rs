@@ -18,8 +18,17 @@ pub struct Metadata {
 
 #[derive(Debug)]
 pub enum Variable {
-    Float { default: f32, min: f32, max: f32 },
-    Enum(&'static [&'static str]),
+    Float {
+        description: &'static str,
+        min: f32,
+        max: f32,
+        default: f32,
+    },
+    Enum {
+        description: &'static str,
+        variants: &'static [&'static str],
+        default: &'static str,
+    },
     Dict(phf::Map<&'static str, Variable>),
 }
 
@@ -47,14 +56,16 @@ pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {
             description: "Use warmer colors to make the display easier on your eyes.",
             variables: phf_map! {
                 "temperature" => Variable::Float {
-                    default: 2600.0,
+                    description: "Color temperature in Kelvin.",
                     min: 1000.0,
                     max: 40000.0,
+                    default: 2600.0,
                 },
                 "strength" => Variable::Float {
-                    default: 1.0,
+                    description: "Strength of the effect.",
                     min: 0.0,
                     max: 1.0,
+                    default: 1.0,
                 },
             },
         },
@@ -69,21 +80,31 @@ pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {
                 Supports protanopia (red-green), deuteranopia (green-red), and tritanopia (blue-yellow).\
             ",
             variables: phf_map! {
-                "type" => Variable::Enum(&[
-                    "protanopia",
-                    "protan",
-                    "redgreen",
-                    "deuteranopia",
-                    "deutan",
-                    "greenred",
-                    "tritanopia",
-                    "tritan",
-                    "blueyellow",
-                ]),
+                "type" => Variable::Enum {
+                    description: "\
+                        Type of color correction.\n\
+                        - \"protanopia\": Red-green color blindness.\n\
+                        - \"deuteranopia\": Green-red color blindness.\n\
+                        - \"tritanopia\": Blue-yellow color blindness.\
+                    ",
+                    variants: &[
+                        "protanopia",
+                        "protan",
+                        "redgreen",
+                        "deuteranopia",
+                        "deutan",
+                        "greenred",
+                        "tritanopia",
+                        "tritan",
+                        "blueyellow",
+                    ],
+                    default: "protanopia",
+                },
                 "strength" => Variable::Float {
-                    default: 0.2,
+                    description: "Strength of the effect.",
                     min: 0.0,
                     max: 1.0,
+                    default: 0.2,
                 },
             },
         },
@@ -95,8 +116,26 @@ pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {
             full_name: "Grayscale",
             description: "Use grayscale filter",
             variables: phf_map! {
-                "type" => Variable::Enum(&["luminosity", "lightness", "average"]),
-                "luminosity_type" => Variable::Enum(&["pal", "hdtv", "hdr"]),
+                "type" => Variable::Enum {
+                    description: "\
+                        Type of grayscale conversion.\n\
+                        - \"luminosity\": Use weighted average of RGB values.\n\
+                        - \"lightness\": Use average of min and max RGB values.\n\
+                        - \"average\": Use average of RGB values.\
+                    ",
+                    variants: &["luminosity", "lightness", "average"],
+                    default: "luminosity",
+                },
+                "luminosity_type" => Variable::Enum {
+                    description: "\
+                        Type of luminosity calculation. (Only applies when type = \"luminosity\")\n\
+                        - \"pal\": Use PAL/NTSC standard. (Rec. 601)\n\
+                        - \"hdtv\": Use HDTV standard. (Rec. 709)\n\
+                        - \"hdr\": Use HDR standard. (Rec. 2100)\n\
+                    ",
+                    variants: &["pal", "hdtv", "hdr"],
+                    default: "hdr",
+                },
             },
         },
     },
@@ -118,25 +157,29 @@ pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {
             variables: phf_map! {
                 "balance" => Variable::Dict(phf_map! {
                     "red" => Variable::Float {
-                        default: 1.0,
+                        description: "Per-channel multiplier to vibrance strength (red).",
                         min: 0.0,
                         max: 10.0,
+                        default: 1.0,
                     },
                     "green" => Variable::Float {
-                        default: 1.0,
+                        description: "Per-channel multiplier to vibrance strength (green).",
                         min: 0.0,
                         max: 10.0,
+                        default: 1.0,
                     },
                     "blue" => Variable::Float {
-                        default: 1.0,
+                        description: "Per-channel multiplier to vibrance strength (blue).",
                         min: 0.0,
                         max: 10.0,
+                        default: 1.0,
                     },
                 }),
                 "strength" => Variable::Float {
-                    default: 0.15,
+                    description: "Strength of vibrance effect. (Negative values will reduce vibrance.)",
                     min: -1.0,
                     max: 1.0,
+                    default: 0.15,
                 },
             },
         },
