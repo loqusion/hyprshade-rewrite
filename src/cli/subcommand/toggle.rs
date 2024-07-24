@@ -18,10 +18,13 @@ TODO: write help text
 pub struct Toggle {
     #[arg(help = SHADER_HELP, long_help = SHADER_HELP_LONG)]
     shader: Option<String>,
+
     #[arg(long)]
     fallback: Option<String>,
+
     #[arg(long)]
     fallback_default: bool,
+
     #[arg(long)]
     fallback_auto: bool,
 }
