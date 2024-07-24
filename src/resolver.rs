@@ -81,7 +81,7 @@ impl ResolverWithName<'_> {
         }
 
         Err(Error::ShaderNameNotFound(
-            self.0.to_string_lossy().into_owned(),
+            name.to_string_lossy().into_owned(),
         ))
     }
 
