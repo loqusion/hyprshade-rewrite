@@ -35,3 +35,15 @@ impl CommandExecute for Cli {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use clap::CommandFactory;
+
+    use super::*;
+
+    #[test]
+    fn debug_assert() {
+        Cli::command().debug_assert();
+    }
+}
