@@ -8,7 +8,7 @@ pub struct Shader(ShaderInner);
 
 enum ShaderInner {
     Path(PathBuf),
-    Builtin(&'static BuiltinShader),
+    Builtin(BuiltinShader<'static>),
 }
 
 impl Shader {
@@ -16,8 +16,8 @@ impl Shader {
         Self(ShaderInner::Path(path_buf))
     }
 
-    pub fn from_builtin(builtin: &'static BuiltinShader) -> Self {
-        Self(ShaderInner::Builtin(builtin))
+    pub fn from_builtin(builtin_shader: BuiltinShader<'static>) -> Self {
+        Self(ShaderInner::Builtin(builtin_shader))
     }
 
     pub fn current() -> eyre::Result<Option<Self>> {
@@ -44,8 +44,8 @@ impl Shader {
                 }
                 _ => path,
             },
-            ShaderInner::Builtin(builtin) => {
-                if builtin.is_template() {
+            ShaderInner::Builtin(builtin_shader) => {
+                if builtin_shader.is_template() {
                     todo!("compile builtin shader");
                 } else {
                     todo!("write shader to filesystem");

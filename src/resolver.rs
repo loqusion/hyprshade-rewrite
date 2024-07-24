@@ -75,7 +75,7 @@ impl ResolverWithName<'_> {
             }
         }
 
-        if let Some(builtin_shader) = BUILTIN_SHADERS.get(name.as_encoded_bytes()) {
+        if let Some(builtin_shader) = BUILTIN_SHADERS.get_entry(name.as_encoded_bytes()) {
             trace!("Resolved {name:?} to builtin shader");
             return Ok(Shader::from_builtin(builtin_shader));
         }

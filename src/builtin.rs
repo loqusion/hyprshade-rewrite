@@ -1,9 +1,12 @@
 use phf::phf_map;
 
-pub struct BuiltinShaders(phf::Map<&'static [u8], BuiltinShader>);
+pub struct BuiltinShaders(phf::Map<&'static [u8], BuiltinShaderValue>);
 
 #[derive(Debug)]
-pub struct BuiltinShader {
+pub struct BuiltinShader<'a>(&'static str, &'a BuiltinShaderValue);
+
+#[derive(Debug)]
+pub struct BuiltinShaderValue {
     contents: &'static str,
     is_template: bool,
     metadata: Metadata,
@@ -33,22 +36,24 @@ pub enum Variable {
 }
 
 impl BuiltinShaders {
-    pub fn get<K>(&self, key: &K) -> Option<&BuiltinShader>
+    pub fn get_entry<K>(&self, key: &K) -> Option<BuiltinShader>
     where
         K: AsRef<[u8]> + ?Sized,
     {
-        self.0.get(key.as_ref())
+        self.0.get_entry(key.as_ref()).map(|(key, value)|
+                // SAFETY: All keys are valid UTF-8 strings.
+                unsafe { BuiltinShader(std::str::from_utf8_unchecked(key), value) })
     }
 }
 
-impl BuiltinShader {
+impl BuiltinShader<'_> {
     pub fn is_template(&self) -> bool {
-        self.is_template
+        self.1.is_template
     }
 }
 
 pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {
-    b"blue-light-filter" => BuiltinShader {
+    b"blue-light-filter" => BuiltinShaderValue {
         contents: include_str!("shaders/blue-light-filter.glsl.mustache"),
         is_template: true,
         metadata: Metadata {
@@ -70,7 +75,7 @@ pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {
             },
         },
     },
-    b"color-filter" => BuiltinShader {
+    b"color-filter" => BuiltinShaderValue {
         contents: include_str!("shaders/color-filter.glsl.mustache"),
         is_template: true,
         metadata: Metadata {
@@ -109,7 +114,7 @@ pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {
             },
         },
     },
-    b"grayscale" => BuiltinShader {
+    b"grayscale" => BuiltinShaderValue {
         contents: include_str!("shaders/grayscale.glsl.mustache"),
         is_template: true,
         metadata: Metadata {
@@ -139,7 +144,7 @@ pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {
             },
         },
     },
-    b"invert-colors" => BuiltinShader {
+    b"invert-colors" => BuiltinShaderValue {
         contents: include_str!("shaders/invert-colors.glsl"),
         is_template: false,
         metadata: Metadata {
@@ -148,7 +153,7 @@ pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {
             variables: phf_map! {},
         },
     },
-    b"vibrance" => BuiltinShader {
+    b"vibrance" => BuiltinShaderValue {
         contents: include_str!("shaders/vibrance.glsl.mustache"),
         is_template: true,
         metadata: Metadata {
@@ -185,3 +190,19 @@ pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {
         },
     },
 });
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_entry_pointer_equality() {
+        let expected = BUILTIN_SHADERS.0.get_entry(b"blue-light-filter").unwrap();
+        let actual = BUILTIN_SHADERS.get_entry("blue-light-filter").unwrap();
+        assert!(std::ptr::eq(
+            *expected.0,
+            actual.0 as *const str as *const [u8]
+        ));
+        assert!(std::ptr::eq(expected.1, actual.1));
+    }
+}
