@@ -1,7 +1,10 @@
 use std::process::ExitCode;
 
 use crate::{
-    cli::{common::SHADER_HELP, CommandExecute},
+    cli::{
+        common::{SHADER_HELP, SHADER_HELP_LONG},
+        CommandExecute,
+    },
     resolver::Resolver,
 };
 use clap::Parser;
@@ -12,7 +15,7 @@ Turn on a shader
 */
 #[derive(Debug, Parser)]
 pub struct On {
-    #[arg(help = SHADER_HELP)]
+    #[arg(help = SHADER_HELP, long_help = SHADER_HELP_LONG)]
     shader: String,
 }
 

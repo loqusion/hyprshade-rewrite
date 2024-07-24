@@ -1,7 +1,10 @@
 use std::process::ExitCode;
 
 use crate::{
-    cli::{common::SHADER_HELP, CommandExecute},
+    cli::{
+        common::{SHADER_HELP, SHADER_HELP_LONG},
+        CommandExecute,
+    },
     resolver::Resolver,
     shader::{OnOrOff, Shader},
 };
@@ -13,7 +16,7 @@ TODO: write help text
 */
 #[derive(Debug, Parser)]
 pub struct Toggle {
-    #[arg(help = SHADER_HELP)]
+    #[arg(help = SHADER_HELP, long_help = SHADER_HELP_LONG)]
     shader: Option<String>,
     #[arg(long)]
     fallback: Option<String>,

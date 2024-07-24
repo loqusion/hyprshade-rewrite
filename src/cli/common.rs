@@ -1,4 +1,5 @@
-pub const SHADER_HELP: &str = "\
+pub const SHADER_HELP: &str = "Which shader to turn on";
+pub const SHADER_HELP_LONG: &str = "\
     Which shader to turn on\n\
 \n\
     May be a name (e.g. `blue-light-filter`)\n\
