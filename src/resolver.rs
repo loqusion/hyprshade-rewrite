@@ -1,12 +1,10 @@
 use std::{
-    env,
     ffi::OsStr,
     io,
     path::{Path, PathBuf, MAIN_SEPARATOR},
 };
 
-use crate::{builtin::BUILTIN_SHADERS, shader::Shader, util::PathExt};
-use directories::ProjectDirs;
+use crate::{builtin::BUILTIN_SHADERS, dirs::shader_dirs, shader::Shader, util::PathExt};
 use tracing::{debug, trace};
 use walkdir::WalkDir;
 
@@ -65,7 +63,7 @@ impl ResolverWithName<'_> {
     fn resolve(self) -> Result<Shader, Error> {
         let Self(name) = self;
 
-        for dir in Self::all_dirs() {
+        for dir in shader_dirs() {
             if let Some(path) = self.resolve_in(&dir) {
                 trace!("Resolved {name:?} to {path:?}");
                 return Ok(Shader::from_path_buf(path));
@@ -116,18 +114,6 @@ impl ResolverWithName<'_> {
         }
 
         None
-    }
-
-    fn all_dirs() -> Vec<PathBuf> {
-        [
-            ProjectDirs::from("", "", "hypr").map(|p| p.config_dir().to_path_buf().join("shaders")),
-            ProjectDirs::from("", "", env!("CARGO_PKG_NAME"))
-                .map(|p| p.config_dir().to_path_buf().join("shaders")),
-            env::var("HYPRSHADE_SHADERS_DIR").map(PathBuf::from).ok(),
-        ]
-        .into_iter()
-        .flatten()
-        .collect()
     }
 }
 
