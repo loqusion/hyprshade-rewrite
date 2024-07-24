@@ -37,8 +37,8 @@ impl<'a> Resolver<'a> {
         Self(ResolverInner::WithName(ResolverWithName(name)))
     }
 
-    pub fn resolve(self) -> Result<Shader, Error> {
-        match self.0 {
+    pub fn resolve(&self) -> Result<Shader, Error> {
+        match &self.0 {
             ResolverInner::WithPath(r) => r.resolve(),
             ResolverInner::WithName(r) => r.resolve(),
         }
@@ -47,8 +47,8 @@ impl<'a> Resolver<'a> {
 
 impl ResolverWithPath<'_> {
     #[tracing::instrument(level = "debug", skip(self), fields(path = ?self.0))]
-    fn resolve(self) -> Result<Shader, Error> {
-        let Self(path) = self;
+    fn resolve(&self) -> Result<Shader, Error> {
+        let Self(path) = *self;
 
         match path.try_exists() {
             Ok(true) => Ok(Shader::from_path_buf(path.to_path_buf())),
@@ -60,8 +60,8 @@ impl ResolverWithPath<'_> {
 
 impl ResolverWithName<'_> {
     #[tracing::instrument(level = "debug", skip(self), fields(name = ?self.0.to_string_lossy()))]
-    fn resolve(self) -> Result<Shader, Error> {
-        let Self(name) = self;
+    fn resolve(&self) -> Result<Shader, Error> {
+        let Self(name) = &self;
 
         for dir in shader_dirs() {
             if let Some(path) = self.resolve_in(&dir) {
