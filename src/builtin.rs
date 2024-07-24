@@ -52,6 +52,13 @@ impl BuiltinShader<'_> {
     }
 }
 
+impl PartialEq for BuiltinShader<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self.0, other.0) && std::ptr::eq(self.1, other.1)
+    }
+}
+impl Eq for BuiltinShader<'_> {}
+
 pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {
     b"blue-light-filter" => BuiltinShaderValue {
         contents: include_str!("shaders/blue-light-filter.glsl.mustache"),

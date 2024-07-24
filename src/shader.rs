@@ -63,10 +63,15 @@ impl std::fmt::Display for Shader {
 }
 
 impl PartialEq for Shader {
-    fn eq(&self, _other: &Self) -> bool {
-        todo!("PartialEq for Shader")
+    fn eq(&self, other: &Self) -> bool {
+        match (&self.0, &other.0) {
+            (ShaderInner::Path(a), ShaderInner::Path(b)) => a == b,
+            (ShaderInner::Builtin(a), ShaderInner::Builtin(b)) => a == b,
+            _ => false,
+        }
     }
 }
+impl Eq for Shader {}
 
 pub trait OnOrOff {
     fn on_or_off(&self) -> eyre::Result<()>;
