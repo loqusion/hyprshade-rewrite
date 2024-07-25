@@ -19,14 +19,26 @@ impl FromStr for ArgVar {
     }
 }
 
-impl TryFrom<ArgVar> for (String, mustache::Data) {
+impl TryFrom<ArgVar> for HashMap<String, mustache::Data> {
     type Error = ArgVarError;
 
     fn try_from(value: ArgVar) -> Result<Self, Self::Error> {
         let ArgVar(s) = value;
         match s.split('=').collect::<Vec<_>>()[..] {
+            ["", _] => Err(ArgVarError::EmptyKey(s)),
             [_, ""] => Err(ArgVarError::EmptyValue(s)),
-            [key, value] => Ok((key.to_string(), mustache::Data::String(value.to_string()))),
+            [dotted_key, value] => {
+                let mut key_split = dotted_key.split('.').rev();
+                let mut map: HashMap<String, mustache::Data> = HashMap::from([(
+                    key_split.next().unwrap().to_string(),
+                    mustache::Data::String(value.to_string()),
+                )]);
+
+                for key in key_split {
+                    map = HashMap::from([(key.to_string(), mustache::Data::Map(map))]);
+                }
+                Ok(map)
+            }
             [_, _, ..] => Err(ArgVarError::TooManyEquals(s)),
             [_] => Err(ArgVarError::NoEquals(s)),
             [] => Err(ArgVarError::NoContent),
@@ -43,22 +55,82 @@ impl FromIterator<ArgVar> for Result<mustache::Data, Vec<ArgVarError>> {
             .map(|arg_var| arg_var.try_into())
             .partition(Result::is_ok);
         let things: Vec<_> = things.into_iter().map(Result::unwrap).collect();
-        let errors: Vec<_> = errors.into_iter().map(Result::unwrap_err).collect();
+        let mut errors: Vec<_> = errors.into_iter().map(Result::unwrap_err).collect();
+
+        let merge_errors = things
+            .into_iter()
+            .filter_map(|data| ArgVar::deep_merge(&mut map, data).err())
+            .collect::<Vec<_>>();
+        errors.extend(merge_errors);
 
         if !errors.is_empty() {
             return Err(errors);
-        }
-
-        for (key, value) in things {
-            map.insert(key, value);
         }
 
         Ok(mustache::Data::Map(map))
     }
 }
 
+impl ArgVar {
+    fn deep_merge(
+        map: &mut HashMap<String, mustache::Data>,
+        data: HashMap<String, mustache::Data>,
+    ) -> Result<(), ArgVarError> {
+        ArgVar::deep_merge_impl(map, data, &Vec::new())
+    }
+
+    fn deep_merge_impl(
+        map: &mut HashMap<String, mustache::Data>,
+        data: HashMap<String, mustache::Data>,
+        ctx: &[&str],
+    ) -> Result<(), ArgVarError> {
+        use std::collections::hash_map::Entry;
+
+        for (key, value) in data {
+            match map.entry(key) {
+                Entry::Vacant(entry) => {
+                    entry.insert(value);
+                }
+                Entry::Occupied(mut entry) => {
+                    let key = entry.key().clone();
+                    let entry_value = entry.get_mut();
+                    match (entry_value, value) {
+                        (mustache::Data::Map(inner_map), mustache::Data::Map(inner_value)) => {
+                            let mut ctx = Vec::from(ctx);
+                            ctx.push(&key);
+                            ArgVar::deep_merge_impl(inner_map, inner_value, &ctx)?;
+                        }
+                        (mustache::Data::Map(inner_map), value) => {
+                            dbg!(&ctx);
+                            dbg!(&inner_map);
+                            dbg!(&value);
+                            return Err(ArgVarError::Merge);
+                        }
+                        (entry_value, mustache::Data::Map(inner_value)) => {
+                            dbg!(&ctx);
+                            dbg!(&entry_value);
+                            dbg!(&inner_value);
+                            return Err(ArgVarError::Merge);
+                        }
+                        (entry_value, value) => {
+                            dbg!(&ctx);
+                            dbg!(&entry_value);
+                            dbg!(&value);
+                            return Err(ArgVarError::Merge);
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum ArgVarError {
+    #[error("{0:?}: empty key (variable must be in the form `key=value`)")]
+    EmptyKey(String),
     #[error("{0:?}: empty value (variable must be in the form `key=value`)")]
     EmptyValue(String),
     #[error("{0:?}: too many `=` (variable must be in the form `key=value`)")]
@@ -67,6 +139,8 @@ pub enum ArgVarError {
     NoEquals(String),
     #[error("missing (variable must be in the form `key=value`)")]
     NoContent,
+    #[error("encountered errors when merging")]
+    Merge,
 }
 
 #[allow(clippy::manual_try_fold)]
@@ -78,9 +152,9 @@ where
     use eyre::eyre;
 
     iter.into_iter().collect::<Result<_, _>>().or_else(|errs| {
-        errs.into_iter()
-            .fold(Err(eyre!("error parsing --{opt_name}")), |report, e| {
-                report.error(e)
-            })
+        errs.into_iter().fold(
+            Err(eyre!("encountered errors parsing --{opt_name}")),
+            |report, e| report.error(e),
+        )
     })
 }
