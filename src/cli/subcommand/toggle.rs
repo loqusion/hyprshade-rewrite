@@ -2,14 +2,14 @@ use std::process::ExitCode;
 
 use crate::{
     cli::{
-        common::{SHADER_HELP, SHADER_HELP_LONG},
+        common::{arg_vars_to_data, ArgVar, SHADER_HELP, SHADER_HELP_LONG},
         CommandExecute,
     },
     resolver::Resolver,
     shader::{OnOrOff, Shader},
 };
 use clap::Parser;
-use color_eyre::eyre::eyre;
+use color_eyre::{eyre::eyre, Section};
 
 /**
 TODO: write help text
@@ -19,6 +19,10 @@ pub struct Toggle {
     #[arg(help = SHADER_HELP, long_help = SHADER_HELP_LONG)]
     shader: Option<String>,
 
+    /// Configuration variable used in rendering <SHADER> (may be specified multiple times)
+    #[arg(long)]
+    var: Vec<ArgVar>,
+
     #[arg(long)]
     fallback: Option<String>,
 
@@ -27,6 +31,12 @@ pub struct Toggle {
 
     #[arg(long)]
     fallback_auto: bool,
+
+    /// Configuration variable used in rendering fallback shader (may be specified multiple times)
+    ///
+    /// Applies to `--fallback`, `--fallback-default`, and `--fallback-auto`
+    #[arg(long)]
+    var_fallback: Vec<ArgVar>,
 }
 
 impl CommandExecute for Toggle {
@@ -34,9 +44,11 @@ impl CommandExecute for Toggle {
     fn execute(self) -> eyre::Result<ExitCode> {
         let Toggle {
             shader,
+            var,
             fallback,
             fallback_default,
             fallback_auto,
+            var_fallback,
         } = self;
 
         let fallback = match (&fallback, fallback_default, fallback_auto) {
@@ -59,9 +71,11 @@ impl CommandExecute for Toggle {
         let current_shader = Shader::current()?;
 
         if shader == current_shader {
-            fallback.on_or_off()?;
+            let data = arg_vars_to_data(var_fallback, "var-fallback")?;
+            fallback.on_or_off(&data)?;
         } else {
-            shader.on_or_off()?;
+            let data = arg_vars_to_data(var, "var")?;
+            shader.on_or_off(&data)?;
         }
 
         Ok(ExitCode::SUCCESS)

@@ -36,7 +36,7 @@ impl Shader {
         hyprctl::shader::clear()
     }
 
-    pub fn on(&self) -> eyre::Result<()> {
+    pub fn on(&self, data: &mustache::Data) -> eyre::Result<()> {
         let path = match &self.0 {
             ShaderInner::Path(path) => match path.file_name().map(rsplit_file_at_dot) {
                 Some((Some(_prefix), Some(extension))) if extension == TEMPLATE_EXTENSION => {
@@ -74,13 +74,13 @@ impl PartialEq for Shader {
 impl Eq for Shader {}
 
 pub trait OnOrOff {
-    fn on_or_off(&self) -> eyre::Result<()>;
+    fn on_or_off(&self, data: &mustache::Data) -> eyre::Result<()>;
 }
 
 impl OnOrOff for Option<Shader> {
-    fn on_or_off(&self) -> eyre::Result<()> {
+    fn on_or_off(&self, data: &mustache::Data) -> eyre::Result<()> {
         if let Some(shader) = self {
-            shader.on()
+            shader.on(data)
         } else {
             Shader::off()
         }

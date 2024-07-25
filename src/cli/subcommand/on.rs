@@ -2,7 +2,7 @@ use std::process::ExitCode;
 
 use crate::{
     cli::{
-        common::{SHADER_HELP, SHADER_HELP_LONG},
+        common::{arg_vars_to_data, ArgVar, SHADER_HELP, SHADER_HELP_LONG},
         CommandExecute,
     },
     resolver::Resolver,
@@ -17,15 +17,20 @@ Turn on a shader
 pub struct On {
     #[arg(help = SHADER_HELP, long_help = SHADER_HELP_LONG)]
     shader: String,
+
+    /// Configuration variable used in rendering <SHADER> (may be specified multiple times)
+    #[arg(long)]
+    var: Vec<ArgVar>,
 }
 
 impl CommandExecute for On {
     #[tracing::instrument(level = "debug", skip_all)]
     fn execute(self) -> eyre::Result<ExitCode> {
-        let On { shader } = self;
+        let On { shader, var } = self;
 
+        let data = arg_vars_to_data(var, "var")?;
         let shader = Resolver::with_cli_arg(&shader).resolve()?;
-        shader.on()?;
+        shader.on(&data)?;
 
         Ok(ExitCode::SUCCESS)
     }
