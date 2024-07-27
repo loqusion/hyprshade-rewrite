@@ -6,7 +6,7 @@ license = "MIT"
 repository = "https://github.com/loqusion/hyprshade"
 
 [dependencies]
-clap = { version = "4.5.9", features = ["cargo", "derive", "wrap_help"] }
+clap = { version = "4.5.9", features = ["cargo", "derive", "error-context", "wrap_help"] }
 clap_derive = "4.5.8"
 color-eyre = "0.6.3"
 derive_more = "0.99.18"
