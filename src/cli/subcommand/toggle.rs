@@ -23,19 +23,19 @@ pub struct Toggle {
     #[arg(long)]
     var: Vec<ArgVar>,
 
-    #[arg(long)]
+    #[arg(long, group = "fallback_args")]
     fallback: Option<String>,
 
-    #[arg(long)]
+    #[arg(long, group = "fallback_args")]
     fallback_default: bool,
 
-    #[arg(long)]
+    #[arg(long, group = "fallback_args")]
     fallback_auto: bool,
 
     /// Configuration variable used in rendering fallback shader (may be specified multiple times)
     ///
     /// Applies to `--fallback`, `--fallback-default`, and `--fallback-auto`
-    #[arg(long)]
+    #[arg(long, requires = "fallback_args")]
     var_fallback: Vec<ArgVar>,
 }
 
