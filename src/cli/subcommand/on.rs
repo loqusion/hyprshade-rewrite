@@ -19,7 +19,7 @@ pub struct On {
     shader: String,
 
     /// Configuration variable used in rendering <SHADER> (may be specified multiple times)
-    #[arg(long)]
+    #[arg(long, value_name = "KEY=VALUE")]
     var: Vec<ArgVar>,
 }
 
