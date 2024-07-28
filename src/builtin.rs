@@ -1,3 +1,11 @@
+use std::{
+    collections::HashMap,
+    fs::{self, File},
+    io,
+    path::PathBuf,
+};
+
+use crate::dirs::runtime_dir;
 use phf::phf_map;
 
 pub struct BuiltinShaders(phf::Map<&'static [u8], BuiltinShaderValue>);
@@ -47,8 +55,50 @@ impl BuiltinShaders {
 }
 
 impl BuiltinShader<'_> {
+    pub fn write(&self) -> io::Result<PathBuf> {
+        let out_path = runtime_dir().join(format!("{}.glsl", self.0));
+        fs::write(&out_path, self.1.contents)?;
+        Ok(out_path)
+    }
+}
+
+impl BuiltinShader<'_> {
     pub fn is_template(&self) -> bool {
         self.1.is_template
+    }
+
+    pub fn render_data(&self, data: &mustache::Data) -> eyre::Result<PathBuf> {
+        debug_assert!(self.is_template());
+
+        let template = mustache::compile_str(self.1.contents)?;
+        let data = self.merge_data(data)?;
+        let out_path = runtime_dir().join(format!("{}.glsl", self.0));
+        let mut out_file = File::create(&out_path)?;
+        template.render_data(&mut out_file, &data)?;
+
+        Ok(out_path)
+    }
+
+    fn merge_data(&self, data: &mustache::Data) -> eyre::Result<mustache::Data> {
+        debug_assert!(matches!(data, mustache::Data::Map(_)));
+
+        let mut merged_data = self.data();
+
+        todo!();
+
+        Ok(merged_data)
+    }
+
+    fn data(&self) -> mustache::Data {
+        let variables = &self.1.metadata.variables;
+        let map = variables.into_iter().fold(
+            HashMap::with_capacity(variables.len()),
+            |mut map, (key, value)| {
+                map.insert(key.to_string(), mustache::Data::from(value));
+                map
+            },
+        );
+        mustache::Data::Map(map)
     }
 }
 
@@ -58,6 +108,25 @@ impl PartialEq for BuiltinShader<'_> {
     }
 }
 impl Eq for BuiltinShader<'_> {}
+
+impl From<&Variable> for mustache::Data {
+    fn from(value: &Variable) -> Self {
+        match value {
+            // TODO: does f32::to_string() render differently based on locale?
+            Variable::Float { default, .. } => mustache::Data::String(default.to_string()),
+            Variable::Enum { default, .. } => {
+                mustache::Data::String(default.to_string().to_uppercase())
+            }
+            Variable::Dict(map) => mustache::Data::Map(map.into_iter().fold(
+                HashMap::with_capacity(map.len()),
+                |mut map, (key, value)| {
+                    map.insert(key.to_string(), mustache::Data::from(value));
+                    map
+                },
+            )),
+        }
+    }
+}
 
 pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {
     b"blue-light-filter" => BuiltinShaderValue {

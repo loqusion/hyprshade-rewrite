@@ -50,9 +50,9 @@ impl Shader {
             },
             ShaderInner::Builtin(builtin_shader) => {
                 if builtin_shader.is_template() {
-                    todo!("compile builtin shader");
+                    builtin_shader.render_data(data)?
                 } else {
-                    todo!("write shader to filesystem");
+                    builtin_shader.write()?
                 }
             }
         };
