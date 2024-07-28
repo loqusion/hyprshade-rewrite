@@ -1,7 +1,7 @@
 mod arg {
+    pub mod help;
     pub mod var;
 }
-mod common;
 mod instrumentation;
 mod subcommand;
 

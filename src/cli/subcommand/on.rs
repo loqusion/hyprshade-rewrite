@@ -2,8 +2,10 @@ use std::process::ExitCode;
 
 use crate::{
     cli::{
-        arg::var::{VarArg, VarArgParser},
-        common::{SHADER_HELP, SHADER_HELP_LONG},
+        arg::{
+            help::{SHADER_HELP, SHADER_HELP_LONG},
+            var::{VarArg, VarArgParser},
+        },
         CommandExecute,
     },
     resolver::Resolver,
