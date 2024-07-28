@@ -1,6 +1,15 @@
-use std::{env, path::PathBuf};
+use std::{env, fs::create_dir_all, path::PathBuf};
 
-use directories::ProjectDirs;
+use directories::{BaseDirs, ProjectDirs};
+
+pub fn runtime_dir() -> PathBuf {
+    let dir = BaseDirs::new()
+        .and_then(|b| b.runtime_dir().map(PathBuf::from))
+        .expect("failed to get XDG_RUNTIME_DIR")
+        .join("hyprshade");
+    create_dir_all(&dir).expect("failed to create runtime directory");
+    dir
+}
 
 pub fn shader_dirs() -> Vec<PathBuf> {
     [

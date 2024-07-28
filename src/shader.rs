@@ -1,6 +1,6 @@
-use std::path::PathBuf;
+use std::{fs::File, path::PathBuf};
 
-use crate::{builtin::BuiltinShader, hyprctl, util::rsplit_file_at_dot};
+use crate::{builtin::BuiltinShader, dirs::runtime_dir, hyprctl, util::rsplit_file_at_dot};
 
 const TEMPLATE_EXTENSION: &str = "mustache";
 
@@ -39,10 +39,14 @@ impl Shader {
     pub fn on(&self, data: &mustache::Data) -> eyre::Result<()> {
         let path = match &self.0 {
             ShaderInner::Path(path) => match path.file_name().map(rsplit_file_at_dot) {
-                Some((Some(_prefix), Some(extension))) if extension == TEMPLATE_EXTENSION => {
-                    todo!("compile filesystem template shader");
+                Some((Some(prefix), Some(extension))) if extension == TEMPLATE_EXTENSION => {
+                    let template = mustache::compile_path(path)?;
+                    let out_path = runtime_dir().join(prefix);
+                    let mut out_file = File::create(&out_path)?;
+                    template.render_data(&mut out_file, data)?;
+                    out_path
                 }
-                _ => path,
+                _ => path.clone(),
             },
             ShaderInner::Builtin(builtin_shader) => {
                 if builtin_shader.is_template() {
@@ -52,7 +56,7 @@ impl Shader {
                 }
             }
         };
-        hyprctl::shader::set(path)
+        hyprctl::shader::set(&path)
     }
 }
 
