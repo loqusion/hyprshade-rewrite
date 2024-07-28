@@ -1,3 +1,6 @@
+mod arg {
+    pub mod var;
+}
 mod common;
 mod instrumentation;
 mod subcommand;
