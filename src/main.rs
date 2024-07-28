@@ -13,7 +13,7 @@ use cli::{Cli, CommandExecute};
 
 fn main() -> eyre::Result<ExitCode> {
     color_eyre::config::HookBuilder::default()
-        .display_env_section(false)
+        .display_env_section(cfg!(debug_assertions))
         .install()?;
 
     let cli = Cli::parse();
