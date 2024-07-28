@@ -14,12 +14,12 @@ uniform sampler2D tex;
 // see https://github.com/CeeJayDK/SweetFX/blob/a792aee788c6203385a858ebdea82a77f81c67f0/Shaders/Vibrance.fx#L20-L30
 
 const vec3 Balance = vec3(
-    {{balance.red}},
-    {{balance.green}},
-    {{balance.blue}}
+    float({{balance.red}}),
+    float({{balance.green}}),
+    float({{balance.blue}})
 );
 
-const float Strength = {{strength}};
+const float Strength = float({{strength}});
 
 const vec3 VIB_coeffVibrance = Balance * -Strength;
 

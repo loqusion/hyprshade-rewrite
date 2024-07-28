@@ -11,7 +11,7 @@ precision highp float;
 varying vec2 v_texcoord;
 uniform sampler2D tex;
 
-const float Strength = {{strength}};
+const float Strength = float({{strength}});
 
 // Enum for color correction type
 const int PROTANOPIA = 0;
