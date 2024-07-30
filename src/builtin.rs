@@ -5,7 +5,7 @@ use std::{
     path::PathBuf,
 };
 
-use crate::dirs::runtime_dir;
+use crate::constants::HYPRSHADE_RUNTIME_DIR;
 use phf::phf_map;
 
 pub struct BuiltinShaders(phf::Map<&'static [u8], BuiltinShaderValue>);
@@ -56,7 +56,10 @@ impl BuiltinShaders {
 
 impl BuiltinShader<'_> {
     pub fn write(&self) -> io::Result<PathBuf> {
-        let out_path = runtime_dir().join(format!("{}.glsl", self.0));
+        let out_path = HYPRSHADE_RUNTIME_DIR
+            .to_owned()
+            .join(format!("{}.glsl", self.0));
+        fs::create_dir_all(out_path.parent().unwrap())?;
         fs::write(&out_path, self.1.contents)?;
         Ok(out_path)
     }
@@ -72,7 +75,10 @@ impl BuiltinShader<'_> {
 
         let template = mustache::compile_str(self.1.contents)?;
         let data = self.merge_data(data)?;
-        let out_path = runtime_dir().join(format!("{}.glsl", self.0));
+        let out_path = HYPRSHADE_RUNTIME_DIR
+            .to_owned()
+            .join(format!("{}.glsl", self.0));
+        fs::create_dir_all(out_path.parent().unwrap())?;
         let mut out_file = File::create(&out_path)?;
         template.render_data(&mut out_file, &data)?;
 

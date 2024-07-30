@@ -1,6 +1,7 @@
 mod builtin;
 mod cli;
 mod config;
+mod constants;
 mod dirs;
 mod hyprctl;
 mod resolver;

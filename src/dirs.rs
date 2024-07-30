@@ -1,22 +1,12 @@
-use std::{env, fs::create_dir_all, path::PathBuf};
+use std::{env, path::PathBuf};
 
-use directories::{BaseDirs, ProjectDirs};
-
-pub fn runtime_dir() -> PathBuf {
-    let dir = BaseDirs::new()
-        .and_then(|b| b.runtime_dir().map(PathBuf::from))
-        .expect("failed to get XDG_RUNTIME_DIR")
-        .join("hyprshade");
-    create_dir_all(&dir).expect("failed to create runtime directory");
-    dir
-}
+use crate::constants::{HYPRLAND_CONFIG_DIR, HYPRSHADE_CONFIG_DIR, HYPRSHADE_SHADERS_DIR_ENV};
 
 pub fn shader_dirs() -> Vec<PathBuf> {
     [
-        ProjectDirs::from("", "", "hypr").map(|p| p.config_dir().to_path_buf().join("shaders")),
-        ProjectDirs::from("", "", env!("CARGO_PKG_NAME"))
-            .map(|p| p.config_dir().to_path_buf().join("shaders")),
-        env::var("HYPRSHADE_SHADERS_DIR").map(PathBuf::from).ok(),
+        Some(HYPRLAND_CONFIG_DIR.to_owned().join("shaders")),
+        Some(HYPRSHADE_CONFIG_DIR.to_owned().join("shaders")),
+        env::var(HYPRSHADE_SHADERS_DIR_ENV).map(PathBuf::from).ok(),
     ]
     .into_iter()
     .flatten()

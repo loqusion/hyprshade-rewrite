@@ -1,6 +1,11 @@
-use std::{fs::File, path::PathBuf};
+use std::{
+    fs::{self, File},
+    path::PathBuf,
+};
 
-use crate::{builtin::BuiltinShader, dirs::runtime_dir, hyprctl, util::rsplit_file_at_dot};
+use crate::{
+    builtin::BuiltinShader, constants::HYPRSHADE_RUNTIME_DIR, hyprctl, util::rsplit_file_at_dot,
+};
 
 const TEMPLATE_EXTENSION: &str = "mustache";
 
@@ -41,7 +46,8 @@ impl Shader {
             ShaderInner::Path(path) => match path.file_name().map(rsplit_file_at_dot) {
                 Some((Some(prefix), Some(extension))) if extension == TEMPLATE_EXTENSION => {
                     let template = mustache::compile_path(path)?;
-                    let out_path = runtime_dir().join(prefix);
+                    let out_path = HYPRSHADE_RUNTIME_DIR.to_owned().join(prefix);
+                    fs::create_dir_all(out_path.parent().unwrap())?;
                     let mut out_file = File::create(&out_path)?;
                     template.render_data(&mut out_file, data)?;
                     out_path
