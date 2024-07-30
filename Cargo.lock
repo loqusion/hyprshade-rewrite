@@ -293,6 +293,7 @@ dependencies = [
  "derive_more",
  "directories",
  "eyre",
+ "lazy_static",
  "mustache",
  "phf",
  "serde",
