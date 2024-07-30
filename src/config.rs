@@ -11,11 +11,8 @@ pub struct Config {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Shader {
     pub name: String,
-    // TODO: Use toml::value::Time directly once Serialize/Deserialize for Time is merged
-    // See https://github.com/toml-rs/toml/pull/771
-    pub start_time: Option<TimeNewtype>,
-    // TODO: See above
-    pub end_time: Option<TimeNewtype>,
+    pub start_time: Option<Time>,
+    pub end_time: Option<Time>,
     #[serde(default)]
     pub default: bool,
     // TODO: Add config field when TemplateData is implemented
@@ -35,41 +32,6 @@ impl From<CompatConfig> for Config {
     fn from(value: CompatConfig) -> Self {
         let CompatConfig { shader } = value;
         Self { shader }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, derive_more::From)]
-#[serde(transparent)]
-#[repr(transparent)]
-pub struct TimeNewtype(#[serde(with = "time_serde_impl")] pub Time);
-
-/// Copied from https://github.com/toml-rs/toml/pull/771
-mod time_serde_impl {
-    use serde::{
-        de::{self, Deserialize},
-        ser::{self, Serialize},
-    };
-    use toml::value::{Datetime, Time};
-
-    pub fn serialize<S>(time: &Time, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
-    {
-        Datetime::from(*time).serialize(serializer)
-    }
-
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<Time, D::Error>
-    where
-        D: de::Deserializer<'de>,
-    {
-        match Datetime::deserialize(deserializer)? {
-            Datetime {
-                date: None,
-                time: Some(time),
-                offset: None,
-            } => Ok(time),
-            _ => Err(de::Error::custom("expected only time portion of datetime")),
-        }
     }
 }
 
@@ -102,13 +64,13 @@ mod tests {
             [
                 Shader {
                     name: "hello".to_owned(),
-                    start_time: Some(Datetime::from_str("12:00:00").unwrap().time.unwrap().into()),
+                    start_time: Some(Datetime::from_str("12:00:00").unwrap().time.unwrap()),
                     end_time: None,
                     default: false,
                 },
                 Shader {
                     name: "wow".to_owned(),
-                    start_time: Some(Datetime::from_str("14:00:00").unwrap().time.unwrap().into()),
+                    start_time: Some(Datetime::from_str("14:00:00").unwrap().time.unwrap()),
                     end_time: None,
                     default: true
                 }
