@@ -42,7 +42,7 @@ pub enum Variable {
         variants: &'static [&'static str],
         default: &'static str,
     },
-    Dict(phf::Map<&'static str, Variable>),
+    Map(phf::Map<&'static str, Variable>),
 }
 
 impl BuiltinShaders {
@@ -119,7 +119,7 @@ impl From<&Variable> for TemplateData {
             Variable::Enum { default, .. } => {
                 TemplateData::Enum(default.to_owned().to_ascii_uppercase())
             }
-            Variable::Dict(map) => TemplateData::from_iter(
+            Variable::Map(map) => TemplateData::from_iter(
                 map.into_iter()
                     .map(|(k, v)| (k.to_string(), TemplateData::from(v))),
             ),
@@ -235,7 +235,7 @@ pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {
             full_name: "Vibrance",
             description: "Enhance color saturation.",
             variables: phf_map! {
-                "balance" => Variable::Dict(phf_map! {
+                "balance" => Variable::Map(phf_map! {
                     "red" => Variable::Float {
                         description: "Per-channel multiplier to vibrance strength (red).",
                         min: 0.0,
