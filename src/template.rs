@@ -4,9 +4,11 @@ use serde::{ser, Deserialize, Serialize};
 
 pub trait MergeDeep<A> {
     fn merge_deep<T: IntoIterator<Item = A>>(&mut self, iter: T, force: bool);
+    #[allow(dead_code)]
     fn merge_deep_keep<T: IntoIterator<Item = A>>(&mut self, iter: T) {
         self.merge_deep(iter, false)
     }
+    #[allow(dead_code)]
     fn merge_deep_force<T: IntoIterator<Item = A>>(&mut self, iter: T) {
         self.merge_deep(iter, true)
     }
