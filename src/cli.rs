@@ -1,6 +1,6 @@
 mod arg {
-    pub mod help;
-    pub mod var;
+    pub(crate) mod help;
+    pub(crate) mod var;
 }
 mod instrumentation;
 mod subcommand;
