@@ -33,8 +33,8 @@ impl<'a> Resolver<'a> {
         Self(ResolverInner::WithPath(ResolverWithPath(path)))
     }
 
-    pub fn with_name(name: &'a OsStr) -> Self {
-        Self(ResolverInner::WithName(ResolverWithName(name)))
+    pub fn with_name<S: ?Sized + AsRef<OsStr>>(name: &'a S) -> Self {
+        Self(ResolverInner::WithName(ResolverWithName(name.as_ref())))
     }
 
     pub fn resolve(&self) -> Result<Shader, Error> {
