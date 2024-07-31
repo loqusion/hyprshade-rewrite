@@ -63,8 +63,7 @@ impl Shader {
             },
             ShaderInner::Builtin(builtin_shader) => {
                 if builtin_shader.is_template() {
-                    // builtin_shader.render(data)?
-                    todo!("builtin shader render")
+                    builtin_shader.render(data)?
                 } else {
                     builtin_shader.write()?
                 }

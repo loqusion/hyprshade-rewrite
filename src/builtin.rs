@@ -1,11 +1,13 @@
 use std::{
-    collections::HashMap,
     fs::{self, File},
     io,
     path::PathBuf,
 };
 
-use crate::constants::HYPRSHADE_RUNTIME_DIR;
+use crate::{
+    constants::HYPRSHADE_RUNTIME_DIR,
+    template::{MergeDeep, TemplateData, TemplateDataMap},
+};
 use phf::phf_map;
 
 pub struct BuiltinShaders(phf::Map<&'static [u8], BuiltinShaderValue>);
@@ -31,9 +33,9 @@ pub struct Metadata {
 pub enum Variable {
     Float {
         description: &'static str,
-        min: f32,
-        max: f32,
-        default: f32,
+        min: f64,
+        max: f64,
+        default: f64,
     },
     Enum {
         description: &'static str,
@@ -74,41 +76,32 @@ impl BuiltinShader<'_> {
         self.1.is_template
     }
 
-    pub fn render_data(&self, data: &mustache::Data) -> eyre::Result<PathBuf> {
+    pub fn render(&self, data: &TemplateDataMap) -> eyre::Result<PathBuf> {
         debug_assert!(self.is_template());
 
         let template = mustache::compile_str(self.1.contents)?;
-        let data = self.merge_data(data)?;
+        let data = {
+            let mut self_data = self.data();
+            self_data.merge_deep_force(data.clone());
+            self_data
+        };
         let out_path = HYPRSHADE_RUNTIME_DIR
             .to_owned()
             .join(format!("{}.glsl", self.0));
         fs::create_dir_all(out_path.parent().unwrap())?;
         let mut out_file = File::create(&out_path)?;
-        template.render_data(&mut out_file, &data)?;
+        template.render(&mut out_file, &data)?;
 
         Ok(out_path)
     }
 
-    fn merge_data(&self, data: &mustache::Data) -> eyre::Result<mustache::Data> {
-        debug_assert!(matches!(data, mustache::Data::Map(_)));
-
-        let mut merged_data = self.data();
-
-        todo!();
-
-        Ok(merged_data)
-    }
-
-    fn data(&self) -> mustache::Data {
+    fn data(&self) -> TemplateDataMap {
         let variables = &self.1.metadata.variables;
-        let map = variables.into_iter().fold(
-            HashMap::with_capacity(variables.len()),
-            |mut map, (key, value)| {
-                map.insert(key.to_string(), mustache::Data::from(value));
-                map
-            },
-        );
-        mustache::Data::Map(map)
+        TemplateDataMap::from_iter(
+            variables
+                .into_iter()
+                .map(|(k, v)| (k.to_string(), TemplateData::from(v))),
+        )
     }
 }
 
@@ -119,21 +112,17 @@ impl PartialEq for BuiltinShader<'_> {
 }
 impl Eq for BuiltinShader<'_> {}
 
-impl From<&Variable> for mustache::Data {
+impl From<&Variable> for TemplateData {
     fn from(value: &Variable) -> Self {
         match value {
-            // TODO: does f32::to_string() render differently based on locale?
-            Variable::Float { default, .. } => mustache::Data::String(default.to_string()),
+            Variable::Float { default, .. } => TemplateData::Float(*default),
             Variable::Enum { default, .. } => {
-                mustache::Data::String(default.to_string().to_uppercase())
+                TemplateData::Enum(default.to_owned().to_ascii_uppercase())
             }
-            Variable::Dict(map) => mustache::Data::Map(map.into_iter().fold(
-                HashMap::with_capacity(map.len()),
-                |mut map, (key, value)| {
-                    map.insert(key.to_string(), mustache::Data::from(value));
-                    map
-                },
-            )),
+            Variable::Dict(map) => TemplateData::from_iter(
+                map.into_iter()
+                    .map(|(k, v)| (k.to_string(), TemplateData::from(v))),
+            ),
         }
     }
 }

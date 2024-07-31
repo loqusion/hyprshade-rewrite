@@ -150,6 +150,12 @@ impl TemplateData {
     }
 }
 
+impl FromIterator<(String, TemplateData)> for TemplateData {
+    fn from_iter<T: IntoIterator<Item = (String, TemplateData)>>(iter: T) -> Self {
+        Self::Map(iter.into_iter().collect())
+    }
+}
+
 impl<const N: usize> From<[(String, TemplateData); N]> for TemplateData {
     fn from(value: [(String, TemplateData); N]) -> Self {
         Self::Map(value.into())
