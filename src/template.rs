@@ -110,7 +110,11 @@ impl TemplateData {
         T: AsRef<str>,
         S: ser::Serializer,
     {
-        serializer.serialize_str(&value.as_ref().to_ascii_uppercase().replace(['-', '_'], ""))
+        serializer.serialize_str(&TemplateData::normalize_enum(value))
+    }
+
+    fn normalize_enum<T: AsRef<str>>(value: &T) -> String {
+        value.as_ref().to_ascii_uppercase().replace(['-', '_'], "")
     }
 }
 
