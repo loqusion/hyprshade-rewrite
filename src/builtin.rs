@@ -66,6 +66,10 @@ impl BuiltinShader<'_> {
 }
 
 impl BuiltinShader<'_> {
+    pub fn name(&self) -> &'static str {
+        self.0
+    }
+
     pub fn is_template(&self) -> bool {
         self.1.is_template
     }

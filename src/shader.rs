@@ -1,11 +1,15 @@
 use std::{
     fs::{self, File},
+    os::unix::ffi::OsStrExt,
     path::PathBuf,
 };
 
 use crate::{
-    builtin::BuiltinShader, constants::HYPRSHADE_RUNTIME_DIR, hyprctl, template::TemplateDataMap,
-    util::rsplit_file_at_dot,
+    builtin::BuiltinShader,
+    constants::HYPRSHADE_RUNTIME_DIR,
+    hyprctl,
+    template::TemplateDataMap,
+    util::{rsplit_file_at_dot, PathExt},
 };
 
 const TEMPLATE_EXTENSION: &str = "mustache";
@@ -65,6 +69,18 @@ impl Shader {
             }
         };
         hyprctl::shader::set(&path)
+    }
+
+    pub fn name(&self) -> &str {
+        match &self.0 {
+            ShaderInner::Path(path) => {
+                let prefix =
+                    PathExt::file_prefix(path).unwrap_or_else(|| panic!("invalid path: {path:?}"));
+                std::str::from_utf8(prefix.as_bytes())
+                    .unwrap_or_else(|err| panic!("error when converting {path:?}: {err}"))
+            }
+            ShaderInner::Builtin(builtin) => builtin.name(),
+        }
     }
 }
 

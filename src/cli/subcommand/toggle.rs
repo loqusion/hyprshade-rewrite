@@ -11,6 +11,7 @@ use crate::{
     config::Config,
     resolver::Resolver,
     shader::{OnOrOff, Shader},
+    template::MergeDeep,
 };
 use clap::Parser;
 use color_eyre::eyre::eyre;
@@ -79,8 +80,26 @@ impl CommandExecute for Toggle {
         let current_shader = Shader::current()?;
 
         if shader == current_shader {
+            let fallback_data = if let Some(config_data) =
+                config.and_then(|c| fallback.as_ref().and_then(|s| c.data(s.name())))
+            {
+                let mut fallback_data = fallback_data;
+                fallback_data.merge_deep_keep(config_data.clone());
+                fallback_data
+            } else {
+                fallback_data
+            };
             fallback.on_or_off(&fallback_data)?;
         } else {
+            let data = if let Some(config_data) =
+                config.and_then(|c| shader.as_ref().and_then(|s| c.data(s.name())))
+            {
+                let mut data = data;
+                data.merge_deep_keep(config_data.clone());
+                data
+            } else {
+                data
+            };
             shader.on_or_off(&data)?;
         }
 

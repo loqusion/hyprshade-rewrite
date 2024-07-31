@@ -10,6 +10,7 @@ use crate::{
     },
     config::Config,
     resolver::Resolver,
+    template::MergeDeep,
 };
 use clap::Parser;
 use tracing::warn;
@@ -34,6 +35,15 @@ impl CommandExecute for On {
 
         let data = VarArg::merge_into_data(var, "var")?;
         let shader = Resolver::with_cli_arg(&shader).resolve()?;
+
+        let data = if let Some(config_data) = config.and_then(|c| c.data(shader.name())) {
+            let mut data = data;
+            data.merge_deep_keep(config_data.clone());
+            data
+        } else {
+            data
+        };
+
         shader.on(&data)?;
 
         Ok(ExitCode::SUCCESS)
