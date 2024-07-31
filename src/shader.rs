@@ -101,17 +101,3 @@ impl PartialEq for Shader {
     }
 }
 impl Eq for Shader {}
-
-pub trait OnOrOff {
-    fn on_or_off(&self, data: &TemplateDataMap) -> eyre::Result<()>;
-}
-
-impl OnOrOff for Option<Shader> {
-    fn on_or_off(&self, data: &TemplateDataMap) -> eyre::Result<()> {
-        if let Some(shader) = self {
-            shader.on(data)
-        } else {
-            Shader::off()
-        }
-    }
-}

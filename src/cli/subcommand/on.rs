@@ -36,13 +36,11 @@ impl CommandExecute for On {
         let data = VarArg::merge_into_data(var, "var")?;
         let shader = Resolver::with_cli_arg(&shader).resolve()?;
 
-        let data = if let Some(config_data) = config.and_then(|c| c.data(shader.name())) {
-            let mut data = data;
+        let mut data = data;
+        if let Some(config_data) = config.and_then(|c| c.data(shader.name())) {
             data.merge_deep_keep(config_data.clone());
-            data
-        } else {
-            data
-        };
+        }
+        let data = data;
 
         shader.on(&data)?;
 

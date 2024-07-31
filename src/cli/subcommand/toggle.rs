@@ -10,7 +10,7 @@ use crate::{
     },
     config::Config,
     resolver::Resolver,
-    shader::{OnOrOff, Shader},
+    shader::Shader,
     template::MergeDeep,
 };
 use clap::Parser;
@@ -58,7 +58,7 @@ impl CommandExecute for Toggle {
 
         // Eagerly evaluate --var and --var-fallback so that feedback is presented unconditionally
         let fallback_data = VarArg::merge_into_data(var_fallback, "var-fallback")?;
-        let data = VarArg::merge_into_data(var, "var")?;
+        let shader_data = VarArg::merge_into_data(var, "var")?;
 
         let fallback = match (&fallback, fallback_default, fallback_auto) {
             (None, false, false) => None,
@@ -86,28 +86,21 @@ impl CommandExecute for Toggle {
 
         let current_shader = Shader::current()?;
 
-        if shader == current_shader {
-            let fallback_data = if let Some(config_data) =
-                config.and_then(|c| fallback.as_ref().and_then(|s| c.data(s.name())))
-            {
-                let mut fallback_data = fallback_data;
-                fallback_data.merge_deep_keep(config_data.clone());
-                fallback_data
-            } else {
-                fallback_data
-            };
-            fallback.on_or_off(&fallback_data)?;
+        let (designated_shader, designated_data) = if shader == current_shader {
+            (fallback, fallback_data)
         } else {
-            let data = if let Some(config_data) =
-                config.and_then(|c| shader.as_ref().and_then(|s| c.data(s.name())))
-            {
-                let mut data = data;
-                data.merge_deep_keep(config_data.clone());
-                data
-            } else {
-                data
-            };
-            shader.on_or_off(&data)?;
+            (shader, shader_data)
+        };
+
+        if let Some(designated_shader) = designated_shader {
+            let mut designated_data = designated_data;
+            if let Some(config_data) = config.and_then(|c| c.data(designated_shader.name())) {
+                designated_data.merge_deep_keep(config_data.clone());
+            }
+            let designated_data = designated_data;
+            designated_shader.on(&designated_data)?;
+        } else {
+            Shader::off()?;
         }
 
         Ok(ExitCode::SUCCESS)
