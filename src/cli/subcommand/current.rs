@@ -14,6 +14,7 @@ impl CommandExecute for Current {
     #[tracing::instrument(level = "debug", skip_all)]
     fn execute(self, _config: Option<&Config>) -> eyre::Result<ExitCode> {
         if let Some(shader) = Shader::current()? {
+            dbg!(&shader);
             println!("{}", shader);
         }
 

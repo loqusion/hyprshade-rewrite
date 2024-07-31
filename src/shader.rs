@@ -14,8 +14,10 @@ use crate::{
 
 const TEMPLATE_EXTENSION: &str = "mustache";
 
+#[derive(Debug)]
 pub struct Shader(ShaderInner);
 
+#[derive(Debug)]
 enum ShaderInner {
     Path(PathBuf),
     Builtin(BuiltinShader<'static>),
