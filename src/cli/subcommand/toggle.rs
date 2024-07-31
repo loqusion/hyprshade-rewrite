@@ -73,9 +73,9 @@ impl CommandExecute for Toggle {
             }
             (None, false, true) => todo!("getting scheduled shader from config"),
             _ => {
-                return Err(eyre!(
-                    "only one of --fallback, --fallback-default, or --fallback-auto can be used"
-                ))
+                unreachable!(
+                    "--fallback, --fallback-default, and --fallback-auto are mutually exclusive"
+                )
             }
         };
 
