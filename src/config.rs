@@ -1,3 +1,5 @@
+use std::{fs, path::Path, str::FromStr};
+
 use serde::{Deserialize, Serialize};
 use toml::value::Time;
 
@@ -19,6 +21,21 @@ pub struct Shader {
     pub default: bool,
     #[serde(default)]
     pub config: TemplateDataMap,
+}
+
+impl Config {
+    pub fn from_path<P: AsRef<Path>>(path: P) -> eyre::Result<Self> {
+        let contents = fs::read_to_string(path)?;
+        Ok(Self::from_str(&contents)?)
+    }
+}
+
+impl FromStr for Config {
+    type Err = toml::de::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        toml::from_str(s)
+    }
 }
 
 #[cfg(feature = "compat")]

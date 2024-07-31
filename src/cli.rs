@@ -5,13 +5,17 @@ mod arg {
 mod instrumentation;
 mod subcommand;
 
-use std::process::ExitCode;
+use std::{path::PathBuf, process::ExitCode};
 
 use self::{instrumentation::Instrumentation, subcommand::HyprshadeSubcommand};
+use crate::{
+    config::Config,
+    constants::{HYPRLAND_CONFIG_DIR, HYPRSHADE_CONFIG_DIR, HYPRSHADE_CONFIG_FILE_ENV},
+};
 use clap::Parser;
 
 pub trait CommandExecute {
-    fn execute(self) -> eyre::Result<ExitCode>;
+    fn execute(self, config: Option<&Config>) -> eyre::Result<ExitCode>;
 }
 
 #[derive(Debug, Parser)]
@@ -20,21 +24,47 @@ pub struct Cli {
     #[group(flatten)]
     pub instrumentation: Instrumentation,
 
+    /// Path to configuration file
+    #[arg(long, env = HYPRSHADE_CONFIG_FILE_ENV, global = true)]
+    config: Option<PathBuf>,
+
     #[command(subcommand)]
     command: HyprshadeSubcommand,
 }
 
+impl Cli {
+    #[allow(clippy::unnecessary_literal_unwrap, clippy::expect_fun_call)]
+    pub fn config(&self) -> Option<Config> {
+        if let Some(path) = &self.config {
+            return Some(Config::from_path(path).unwrap_or_else(|err| {
+                Err(err).expect(&format!("error reading config at {:?}", path))
+            }));
+        }
+
+        for path in &[
+            HYPRLAND_CONFIG_DIR.to_owned().join("hyprshade.toml"),
+            HYPRSHADE_CONFIG_DIR.to_owned().join("config.toml"),
+        ] {
+            if let Ok(config) = Config::from_path(path) {
+                return Some(config);
+            }
+        }
+
+        None
+    }
+}
+
 impl CommandExecute for Cli {
     #[tracing::instrument(level = "trace", skip_all)]
-    fn execute(self) -> eyre::Result<ExitCode> {
+    fn execute(self, config: Option<&Config>) -> eyre::Result<ExitCode> {
         match self.command {
-            HyprshadeSubcommand::Auto(auto) => auto.execute(),
-            HyprshadeSubcommand::Current(current) => current.execute(),
-            HyprshadeSubcommand::Install(install) => install.execute(),
-            HyprshadeSubcommand::Ls(ls) => ls.execute(),
-            HyprshadeSubcommand::Off(off) => off.execute(),
-            HyprshadeSubcommand::On(on) => on.execute(),
-            HyprshadeSubcommand::Toggle(toggle) => toggle.execute(),
+            HyprshadeSubcommand::Auto(auto) => auto.execute(config),
+            HyprshadeSubcommand::Current(current) => current.execute(config),
+            HyprshadeSubcommand::Install(install) => install.execute(config),
+            HyprshadeSubcommand::Ls(ls) => ls.execute(config),
+            HyprshadeSubcommand::Off(off) => off.execute(config),
+            HyprshadeSubcommand::On(on) => on.execute(config),
+            HyprshadeSubcommand::Toggle(toggle) => toggle.execute(config),
         }
     }
 }

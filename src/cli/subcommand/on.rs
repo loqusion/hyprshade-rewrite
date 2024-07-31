@@ -8,6 +8,7 @@ use crate::{
         },
         CommandExecute,
     },
+    config::Config,
     resolver::Resolver,
 };
 use clap::Parser;
@@ -28,7 +29,7 @@ pub struct On {
 
 impl CommandExecute for On {
     #[tracing::instrument(level = "debug", skip_all)]
-    fn execute(self) -> eyre::Result<ExitCode> {
+    fn execute(self, config: Option<&Config>) -> eyre::Result<ExitCode> {
         let On { shader, var } = self;
 
         let data = VarArg::merge_into_data(var, "var")?;

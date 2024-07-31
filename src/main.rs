@@ -23,7 +23,9 @@ fn main() -> eyre::Result<ExitCode> {
 
     cli.instrumentation.setup()?;
 
-    cli.execute()
+    let config = cli.config();
+
+    cli.execute(config.as_ref())
 }
 
 #[cfg(not(target_os = "linux"))]

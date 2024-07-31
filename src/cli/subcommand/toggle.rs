@@ -8,6 +8,7 @@ use crate::{
         },
         CommandExecute,
     },
+    config::Config,
     resolver::Resolver,
     shader::{OnOrOff, Shader},
 };
@@ -44,7 +45,7 @@ pub struct Toggle {
 
 impl CommandExecute for Toggle {
     #[tracing::instrument(level = "debug", skip_all)]
-    fn execute(self) -> eyre::Result<ExitCode> {
+    fn execute(self, config: Option<&Config>) -> eyre::Result<ExitCode> {
         let Toggle {
             shader,
             var,

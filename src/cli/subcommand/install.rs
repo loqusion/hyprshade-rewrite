@@ -1,6 +1,6 @@
 use std::process::ExitCode;
 
-use crate::cli::CommandExecute;
+use crate::{cli::CommandExecute, config::Config};
 use clap::Parser;
 use color_eyre::eyre::eyre;
 
@@ -16,7 +16,7 @@ pub struct Install {
 
 impl CommandExecute for Install {
     #[tracing::instrument(level = "debug", skip_all)]
-    fn execute(self) -> eyre::Result<ExitCode> {
+    fn execute(self, config: Option<&Config>) -> eyre::Result<ExitCode> {
         let Install { enable: _ } = self;
 
         Err(eyre!("Not implemented"))

@@ -1,6 +1,6 @@
 use std::process::ExitCode;
 
-use crate::{cli::CommandExecute, shader::Shader};
+use crate::{cli::CommandExecute, config::Config, shader::Shader};
 use clap::Parser;
 use tracing::warn;
 
@@ -12,7 +12,7 @@ pub struct Current;
 
 impl CommandExecute for Current {
     #[tracing::instrument(level = "debug", skip_all)]
-    fn execute(self) -> eyre::Result<ExitCode> {
+    fn execute(self, _config: Option<&Config>) -> eyre::Result<ExitCode> {
         if let Some(shader) = Shader::current()? {
             println!("{}", shader);
         }

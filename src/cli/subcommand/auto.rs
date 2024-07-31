@@ -1,6 +1,6 @@
 use std::process::ExitCode;
 
-use crate::cli::CommandExecute;
+use crate::{cli::CommandExecute, config::Config};
 use clap::Parser;
 use color_eyre::eyre::eyre;
 
@@ -12,7 +12,7 @@ pub struct Auto;
 
 impl CommandExecute for Auto {
     #[tracing::instrument(level = "debug", skip_all)]
-    fn execute(self) -> eyre::Result<ExitCode> {
+    fn execute(self, config: Option<&Config>) -> eyre::Result<ExitCode> {
         Err(eyre!("Not implemented"))
     }
 }
