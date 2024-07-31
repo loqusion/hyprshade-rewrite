@@ -120,9 +120,9 @@ impl ResolverWithName<'_> {
 #[non_exhaustive]
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("Could not read path {0:?}")]
+    #[error("could not read path {0:?}")]
     IoError(PathBuf, #[source] io::Error),
-    #[error("Shader named {0:?} not found")]
+    #[error("shader named {0:?} not found")]
     ShaderNameNotFound(String),
 }
 
