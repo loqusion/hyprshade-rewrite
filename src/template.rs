@@ -37,27 +37,27 @@ impl TemplateDataMap {
     }
 }
 
-impl MergeDeep<(String, TemplateData)> for TemplateDataMap {
+impl MergeDeep<(String, TemplateData)> for HashMap<String, TemplateData> {
     fn merge_deep<T: IntoIterator<Item = (String, TemplateData)>>(&mut self, iter: T, force: bool) {
         use std::collections::hash_map::Entry::*;
 
         let iter = iter.into_iter();
-        let reserve = if self.0.is_empty() {
+        let reserve = if self.is_empty() {
             iter.size_hint().0
         } else {
             iter.size_hint().0.saturating_add(1) / 2
         };
-        self.0.reserve(reserve);
+        self.reserve(reserve);
 
-        iter.for_each(move |(k, v)| match self.0.entry(k) {
+        iter.for_each(move |(k, v)| match self.entry(k) {
             Vacant(entry) => {
                 entry.insert(v);
             }
             Occupied(entry) => {
                 let value = entry.into_mut();
                 match (value, v) {
-                    (value @ TemplateData::Map(_), TemplateData::Map(inner_v)) => {
-                        value._merge_deep(inner_v, force);
+                    (TemplateData::Map(inner_value), TemplateData::Map(inner_v)) => {
+                        inner_value.merge_deep(inner_v, force);
                     }
                     (value, v) => {
                         if force {
@@ -70,45 +70,9 @@ impl MergeDeep<(String, TemplateData)> for TemplateDataMap {
     }
 }
 
-impl TemplateData {
-    fn _merge_deep<T: IntoIterator<Item = (String, TemplateData)>>(
-        &mut self,
-        iter: T,
-        force: bool,
-    ) {
-        use std::collections::hash_map::Entry::*;
-
-        let this = match self {
-            Self::Map(map) => map,
-            _ => unreachable!("do not call TemplateData::_merge_deep() on non-Map variant"),
-        };
-
-        let iter = iter.into_iter();
-        let reserve = if this.is_empty() {
-            iter.size_hint().0
-        } else {
-            iter.size_hint().0.saturating_add(1) / 2
-        };
-        this.reserve(reserve);
-
-        iter.for_each(move |(k, v)| match this.entry(k) {
-            Vacant(entry) => {
-                entry.insert(v);
-            }
-            Occupied(entry) => {
-                let value = entry.into_mut();
-                match (value, v) {
-                    (value @ TemplateData::Map(_), TemplateData::Map(inner_v)) => {
-                        value._merge_deep(inner_v, force);
-                    }
-                    (value, v) => {
-                        if force {
-                            *value = v;
-                        }
-                    }
-                }
-            }
-        });
+impl MergeDeep<(String, TemplateData)> for TemplateDataMap {
+    fn merge_deep<T: IntoIterator<Item = (String, TemplateData)>>(&mut self, iter: T, force: bool) {
+        self.0.merge_deep(iter, force);
     }
 }
 
