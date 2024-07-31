@@ -24,10 +24,6 @@ pub struct Shader {
 }
 
 impl Config {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn shader(&self, name: &str) -> Option<&Shader> {
         self.shader.iter().find(|shader| shader.name == name)
     }
