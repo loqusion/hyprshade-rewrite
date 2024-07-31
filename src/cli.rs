@@ -36,7 +36,7 @@ impl Cli {
     #[allow(clippy::unnecessary_literal_unwrap, clippy::expect_fun_call)]
     pub fn config(&self) -> Option<Config> {
         if let Some(path) = &self.config {
-            return Some(Config::from_path(path).unwrap_or_else(|err| {
+            return Some(Config::read(path).unwrap_or_else(|err| {
                 Err(err).expect(&format!("error reading config at {:?}", path))
             }));
         }
@@ -45,7 +45,7 @@ impl Cli {
             HYPRLAND_CONFIG_DIR.to_owned().join("hyprshade.toml"),
             HYPRSHADE_CONFIG_DIR.to_owned().join("config.toml"),
         ] {
-            if let Ok(config) = Config::from_path(path) {
+            if let Ok(config) = Config::read(path) {
                 return Some(config);
             }
         }

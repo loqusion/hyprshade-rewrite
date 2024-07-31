@@ -24,6 +24,13 @@ pub struct Shader {
 }
 
 impl Config {
+    pub fn read<P: AsRef<Path>>(path: P) -> eyre::Result<Self> {
+        let contents = fs::read_to_string(path)?;
+        Ok(Self::from_str(&contents)?)
+    }
+}
+
+impl Config {
     pub fn shader(&self, name: &str) -> Option<&Shader> {
         self.shader.iter().find(|shader| shader.name == name)
     }
@@ -34,13 +41,6 @@ impl Config {
 
     pub fn default_shader(&self) -> Option<&Shader> {
         self.shader.iter().find(|shader| shader.default)
-    }
-}
-
-impl Config {
-    pub fn from_path<P: AsRef<Path>>(path: P) -> eyre::Result<Self> {
-        let contents = fs::read_to_string(path)?;
-        Ok(Self::from_str(&contents)?)
     }
 }
 
