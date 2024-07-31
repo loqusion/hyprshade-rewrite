@@ -3,6 +3,7 @@ use std::{
     fmt::{self, Display},
 };
 
+use crate::template::{MergeDeep, TemplateData, TemplateDataCliParseError, TemplateDataMap};
 use clap::builder::TypedValueParser;
 use clap::error::{ContextKind, ContextValue, ErrorKind};
 
@@ -19,22 +20,36 @@ impl VarArg {
     pub fn merge_into_data(
         vars: Vec<VarArg>,
         arg_name: &str,
-    ) -> Result<mustache::Data, VarArgMergeError> {
+    ) -> Result<TemplateDataMap, VarArgMergeError> {
         VarArg::check_no_conflicts(&vars, arg_name)?;
 
-        let map = vars.into_iter().fold(HashMap::new(), |mut map, arg| {
-            let VarArg { mut lhs, rhs } = arg;
-            let last = lhs.pop().expect("lhs is non-empty");
-            let data = lhs.into_iter().rev().fold(
-                HashMap::from([(last, mustache::Data::String(rhs))]),
-                |map, key| HashMap::from([(key, mustache::Data::Map(map))]),
-            );
+        let map = vars
+            .into_iter()
+            .try_fold(TemplateDataMap::new(), |mut map, arg| {
+                let data = match TemplateData::from_cli_arg(&arg.rhs) {
+                    Ok(data) => data,
+                    Err(source) => {
+                        return Err(VarArgMergeError::Parse {
+                            arg,
+                            arg_name: arg_name.to_owned(),
+                            source,
+                        })
+                    }
+                };
+                let VarArg { mut lhs, .. } = arg;
+                let last = lhs.pop().expect("lhs is non-empty");
+                let data = lhs
+                    .into_iter()
+                    .rev()
+                    .fold(TemplateDataMap::from([(last, data)]), |map, key| {
+                        TemplateDataMap::from([(key, TemplateData::from(map))])
+                    });
 
-            VarArg::deep_merge(&mut map, data);
+                map.merge_deep(data);
 
-            map
-        });
-        Ok(mustache::Data::Map(map))
+                Ok(map)
+            })?;
+        Ok(map)
     }
 
     fn check_no_conflicts(vars: &[VarArg], arg_name: &str) -> Result<(), VarArgMergeError> {
@@ -47,12 +62,11 @@ impl VarArg {
 
                     match map.get(prefix) {
                         Some(&(prior, is_leaf_prior)) if is_leaf_prior || is_leaf => {
-                            return Err(VarArgMergeErrorRepr::Conflict {
+                            return Err(VarArgMergeError::Conflict {
                                 prior: prior.clone(),
                                 conflicting: arg.clone(),
-                                arg_name: arg_name.to_string(),
-                            }
-                            .into());
+                                arg_name: arg_name.to_owned(),
+                            });
                         }
                         _ => (),
                     }
@@ -63,27 +77,6 @@ impl VarArg {
             },
         )?;
         Ok(())
-    }
-
-    fn deep_merge(
-        map: &mut HashMap<String, mustache::Data>,
-        data: HashMap<String, mustache::Data>,
-    ) {
-        use std::collections::hash_map::Entry;
-
-        for (key, value) in data {
-            match map.entry(key) {
-                Entry::Vacant(entry) => {
-                    entry.insert(value);
-                }
-                Entry::Occupied(entry) => match (entry.into_mut(), value) {
-                    (mustache::Data::Map(inner_map), mustache::Data::Map(inner_value)) => {
-                        VarArg::deep_merge(inner_map, inner_value);
-                    }
-                    _ => panic!("expected no conflicts",),
-                },
-            }
-        }
     }
 }
 
@@ -168,16 +161,19 @@ impl TypedValueParser for VarArgParser {
 }
 
 #[derive(Debug, thiserror::Error)]
-#[error(transparent)]
-pub struct VarArgMergeError(#[from] VarArgMergeErrorRepr);
-
-#[derive(Debug, thiserror::Error)]
-enum VarArgMergeErrorRepr {
+#[non_exhaustive]
+pub enum VarArgMergeError {
     #[error("--{arg_name}: '{conflicting}' conflicts with '{prior}'")]
     Conflict {
         prior: VarArg,
         conflicting: VarArg,
         arg_name: String,
+    },
+    #[error("in '--{arg_name} {arg}'")]
+    Parse {
+        arg: VarArg,
+        arg_name: String,
+        source: TemplateDataCliParseError,
     },
 }
 

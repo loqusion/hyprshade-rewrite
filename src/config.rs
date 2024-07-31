@@ -1,23 +1,24 @@
 use serde::{Deserialize, Serialize};
 use toml::value::Time;
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
+use crate::template::TemplateDataMap;
+
+#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 #[cfg_attr(feature = "compat", serde(from = "CompatConfig"))]
 pub struct Config {
     #[serde(default)]
     pub shader: Vec<Shader>,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 pub struct Shader {
     pub name: String,
     pub start_time: Option<Time>,
     pub end_time: Option<Time>,
     #[serde(default)]
     pub default: bool,
-    // TODO: Add config field when TemplateData is implemented
-    // #[serde(default)]
-    // pub config: TemplateData,
+    #[serde(default)]
+    pub config: TemplateDataMap,
 }
 
 #[cfg(feature = "compat")]
@@ -67,13 +68,15 @@ mod tests {
                     start_time: Some(Datetime::from_str("12:00:00").unwrap().time.unwrap()),
                     end_time: None,
                     default: false,
+                    config: Default::default()
                 },
                 Shader {
                     name: "wow".to_owned(),
                     start_time: Some(Datetime::from_str("14:00:00").unwrap().time.unwrap()),
                     end_time: None,
-                    default: true
-                }
+                    default: true,
+                    config: Default::default()
+                },
             ]
         );
     }

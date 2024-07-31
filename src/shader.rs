@@ -4,7 +4,8 @@ use std::{
 };
 
 use crate::{
-    builtin::BuiltinShader, constants::HYPRSHADE_RUNTIME_DIR, hyprctl, util::rsplit_file_at_dot,
+    builtin::BuiltinShader, constants::HYPRSHADE_RUNTIME_DIR, hyprctl, template::TemplateDataMap,
+    util::rsplit_file_at_dot,
 };
 
 const TEMPLATE_EXTENSION: &str = "mustache";
@@ -41,7 +42,7 @@ impl Shader {
         hyprctl::shader::clear()
     }
 
-    pub fn on(&self, data: &mustache::Data) -> eyre::Result<()> {
+    pub fn on(&self, data: &TemplateDataMap) -> eyre::Result<()> {
         let path = match &self.0 {
             ShaderInner::Path(path) => match path.file_name().map(rsplit_file_at_dot) {
                 Some((Some(prefix), Some(extension))) if extension == TEMPLATE_EXTENSION => {
@@ -49,14 +50,15 @@ impl Shader {
                     let out_path = HYPRSHADE_RUNTIME_DIR.to_owned().join(prefix);
                     fs::create_dir_all(out_path.parent().unwrap())?;
                     let mut out_file = File::create(&out_path)?;
-                    template.render_data(&mut out_file, data)?;
+                    template.render(&mut out_file, data)?;
                     out_path
                 }
                 _ => path.clone(),
             },
             ShaderInner::Builtin(builtin_shader) => {
                 if builtin_shader.is_template() {
-                    builtin_shader.render_data(data)?
+                    // builtin_shader.render(data)?
+                    todo!("builtin shader render")
                 } else {
                     builtin_shader.write()?
                 }
@@ -84,11 +86,11 @@ impl PartialEq for Shader {
 impl Eq for Shader {}
 
 pub trait OnOrOff {
-    fn on_or_off(&self, data: &mustache::Data) -> eyre::Result<()>;
+    fn on_or_off(&self, data: &TemplateDataMap) -> eyre::Result<()>;
 }
 
 impl OnOrOff for Option<Shader> {
-    fn on_or_off(&self, data: &mustache::Data) -> eyre::Result<()> {
+    fn on_or_off(&self, data: &TemplateDataMap) -> eyre::Result<()> {
         if let Some(shader) = self {
             shader.on(data)
         } else {

@@ -6,6 +6,7 @@ mod dirs;
 mod hyprctl;
 mod resolver;
 mod shader;
+mod template;
 mod util;
 
 use std::process::ExitCode;
