@@ -9,12 +9,13 @@ use crate::{
         CommandExecute,
     },
     config::Config,
+    constants::README_CONFIGURATION,
     resolver::Resolver,
     shader::Shader,
     template::MergeDeep,
 };
 use clap::Parser;
-use color_eyre::eyre::eyre;
+use color_eyre::{eyre::eyre, Section};
 
 /**
 TODO: write help text
@@ -65,9 +66,17 @@ impl CommandExecute for Toggle {
             (Some(fallback), false, false) => Some(Resolver::with_cli_arg(fallback).resolve()?),
             (None, true, false) => {
                 let name = &config
-                    .ok_or_else(|| eyre!("--fallback-default requires a config"))?
+                    .ok_or_else(|| {
+                        eyre!("--fallback-default requires a config").with_suggestion(|| {
+                            format!("For more information, see {README_CONFIGURATION}")
+                        })
+                    })?
                     .default_shader()
-                    .ok_or_else(|| eyre!("no default shader found in config"))?
+                    .ok_or_else(|| {
+                        eyre!("no default shader found in config").with_suggestion(|| {
+                            format!("For more information, see {README_CONFIGURATION}")
+                        })
+                    })?
                     .name;
                 Some(Resolver::with_name(name).resolve()?)
             }

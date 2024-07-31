@@ -18,3 +18,5 @@ lazy_static! {
         .runtime_dir()
         .expect("failed to get XDG_RUNTIME_DIR");
 }
+
+pub const README_CONFIGURATION: &str = concat!(env!("CARGO_PKG_REPOSITORY"), "#configuration");
