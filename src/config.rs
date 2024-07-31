@@ -1,13 +1,22 @@
-use std::{fs, path::Path, str::FromStr};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 use serde::{Deserialize, Serialize};
 use toml::value::Time;
 
 use crate::template::TemplateDataMap;
 
+pub struct Config {
+    config: ConfigDocument,
+    path: PathBuf,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 #[cfg_attr(feature = "compat", serde(from = "CompatConfig"))]
-pub struct Config {
+pub struct ConfigDocument {
     #[serde(default)]
     pub shader: Vec<Shader>,
 }
@@ -25,14 +34,24 @@ pub struct Shader {
 
 impl Config {
     pub fn read<P: AsRef<Path>>(path: P) -> eyre::Result<Self> {
+        let path = path.as_ref();
         let contents = fs::read_to_string(path)?;
-        Ok(Self::from_str(&contents)?)
+        Ok(Self {
+            config: ConfigDocument::from_str(&contents)?,
+            path: path.to_owned(),
+        })
     }
-}
 
-impl Config {
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    pub fn all_shaders(&self) -> &[Shader] {
+        &self.config.shader
+    }
+
     pub fn shader(&self, name: &str) -> Option<&Shader> {
-        self.shader.iter().find(|shader| shader.name == name)
+        self.config.shader.iter().find(|shader| shader.name == name)
     }
 
     pub fn data(&self, name: &str) -> Option<&TemplateDataMap> {
@@ -40,11 +59,11 @@ impl Config {
     }
 
     pub fn default_shader(&self) -> Option<&Shader> {
-        self.shader.iter().find(|shader| shader.default)
+        self.config.shader.iter().find(|shader| shader.default)
     }
 }
 
-impl FromStr for Config {
+impl FromStr for ConfigDocument {
     type Err = toml::de::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -60,7 +79,7 @@ pub struct CompatConfig {
 }
 
 #[cfg(feature = "compat")]
-impl From<CompatConfig> for Config {
+impl From<CompatConfig> for ConfigDocument {
     fn from(value: CompatConfig) -> Self {
         let CompatConfig { shader } = value;
         Self { shader }
@@ -77,7 +96,7 @@ mod tests {
     #[test]
     #[cfg_attr(not(feature = "compat"), ignore)]
     fn compat() {
-        let config: Config = toml::from_str(
+        let config: ConfigDocument = toml::from_str(
             r#"
                 [[shades]]
                 name = "hello"
