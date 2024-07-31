@@ -3,7 +3,13 @@ use std::{collections::HashMap, str::FromStr};
 use serde::{ser, Deserialize, Serialize};
 
 pub trait MergeDeep<A> {
-    fn merge_deep<T: IntoIterator<Item = A>>(&mut self, iter: T);
+    fn merge_deep<T: IntoIterator<Item = A>>(&mut self, iter: T, force: bool);
+    fn merge_deep_keep<T: IntoIterator<Item = A>>(&mut self, iter: T) {
+        self.merge_deep(iter, false)
+    }
+    fn merge_deep_force<T: IntoIterator<Item = A>>(&mut self, iter: T) {
+        self.merge_deep(iter, true)
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
@@ -30,7 +36,7 @@ impl TemplateDataMap {
 }
 
 impl MergeDeep<(String, TemplateData)> for TemplateDataMap {
-    fn merge_deep<T: IntoIterator<Item = (String, TemplateData)>>(&mut self, iter: T) {
+    fn merge_deep<T: IntoIterator<Item = (String, TemplateData)>>(&mut self, iter: T, force: bool) {
         use std::collections::hash_map::Entry::*;
 
         let iter = iter.into_iter();
@@ -49,9 +55,13 @@ impl MergeDeep<(String, TemplateData)> for TemplateDataMap {
                 let value = entry.into_mut();
                 match (value, v) {
                     (value @ TemplateData::Map(_), TemplateData::Map(inner_v)) => {
-                        value._merge_deep(inner_v);
+                        value._merge_deep(inner_v, force);
                     }
-                    (value, v) => *value = v,
+                    (value, v) => {
+                        if force {
+                            *value = v;
+                        }
+                    }
                 }
             }
         });
@@ -59,7 +69,11 @@ impl MergeDeep<(String, TemplateData)> for TemplateDataMap {
 }
 
 impl TemplateData {
-    fn _merge_deep<T: IntoIterator<Item = (String, TemplateData)>>(&mut self, iter: T) {
+    fn _merge_deep<T: IntoIterator<Item = (String, TemplateData)>>(
+        &mut self,
+        iter: T,
+        force: bool,
+    ) {
         use std::collections::hash_map::Entry::*;
 
         let this = match self {
@@ -83,9 +97,13 @@ impl TemplateData {
                 let value = entry.into_mut();
                 match (value, v) {
                     (value @ TemplateData::Map(_), TemplateData::Map(inner_v)) => {
-                        value._merge_deep(inner_v);
+                        value._merge_deep(inner_v, force);
                     }
-                    (value, v) => *value = v,
+                    (value, v) => {
+                        if force {
+                            *value = v;
+                        }
+                    }
                 }
             }
         });
@@ -241,7 +259,7 @@ mod tests {
             (String::from("strength"), TemplateData::Float(0.15)),
         ]);
 
-        data.merge_deep(other_data);
+        data.merge_deep(other_data, true);
 
         assert_eq!(
             TemplateDataMap::from([

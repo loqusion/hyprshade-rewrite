@@ -45,7 +45,7 @@ impl VarArg {
                         TemplateDataMap::from([(key, TemplateData::from(map))])
                     });
 
-                map.merge_deep(data);
+                map.merge_deep_force(data);
 
                 Ok(map)
             })?;
