@@ -5,7 +5,6 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
-use toml::value::Time;
 
 use crate::template::TemplateDataMap;
 
@@ -24,8 +23,10 @@ pub struct ConfigDocument {
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 pub struct Shader {
     pub name: String,
-    pub start_time: Option<Time>,
-    pub end_time: Option<Time>,
+    #[serde(with = "toml_datetime_compat", default)]
+    pub start_time: Option<chrono::NaiveTime>,
+    #[serde(with = "toml_datetime_compat", default)]
+    pub end_time: Option<chrono::NaiveTime>,
     #[serde(default)]
     pub default: bool,
     #[serde(default)]
@@ -88,10 +89,9 @@ impl From<CompatConfig> for ConfigDocument {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
-
     use super::*;
-    use toml::value::Datetime;
+
+    use chrono::NaiveTime;
 
     #[test]
     #[cfg_attr(not(feature = "compat"), ignore)]
@@ -115,14 +115,14 @@ mod tests {
             [
                 Shader {
                     name: "hello".to_owned(),
-                    start_time: Some(Datetime::from_str("12:00:00").unwrap().time.unwrap()),
+                    start_time: Some(NaiveTime::from_hms_opt(12, 0, 0).unwrap()),
                     end_time: None,
                     default: false,
                     config: Default::default()
                 },
                 Shader {
                     name: "wow".to_owned(),
-                    start_time: Some(Datetime::from_str("14:00:00").unwrap().time.unwrap()),
+                    start_time: Some(NaiveTime::from_hms_opt(14, 0, 0).unwrap()),
                     end_time: None,
                     default: true,
                     config: Default::default()
