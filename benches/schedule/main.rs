@@ -17,11 +17,13 @@
 //!     - Construction *O*(*n*log(*n*)): Collect into a `BTreeMap<Time, Option<Event>>`\*
 //!     - Search *O*(log(*n*)): Return last element of `BTreeMap::range()`
 //! * `impl_linear.rs`
-//!     - Construction *O*(*n*): Collect into a vector of `(range, event)` tuples
+//!     - Construction *O*(*n*log(*n*)): Collect and sort\*\* into a vector of `(range, event)`
+//!       tuples
 //!     - Search *O*(*n*): Linear search for an event matching the time
 //!
 //! \* Each entry indicates that the `Option<Event>` will occur between the given `Time`
 //! (inclusive) and the next entry's `Time` (exclusive).
+//! \*\* The input must be sorted due to Hyprshade's permissive configuration format.
 //!
 //! Time complexity analysis considers average case.
 //!
