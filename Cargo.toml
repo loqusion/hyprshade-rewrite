@@ -38,3 +38,7 @@ tempfile = "3.10.1"
 opt-level = "z"
 strip = true
 lto = true
+
+[[bench]]
+name = "schedule"
+harness = false
