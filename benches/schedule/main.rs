@@ -7,7 +7,7 @@
 //! # Implementations
 //!
 //! Each implementation involves two operations: construction and search. Construction happens only
-//! once, and search... also happens only once, so it's not necessarily worth optimizing search at
+//! once, but search... also happens only once, so it's not necessarily worth optimizing search at
 //! the expense of construction.
 //!
 //! * `impl_binary_search.rs`
@@ -23,6 +23,7 @@
 //!
 //! \* Each entry indicates that the `Option<Event>` will occur between the given `Time`
 //! (inclusive) and the next entry's `Time` (exclusive).
+//!
 //! \*\* The input must be sorted due to Hyprshade's permissive configuration format.
 //!
 //! Time complexity analysis considers average case.
