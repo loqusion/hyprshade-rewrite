@@ -17,10 +17,10 @@ use crate::{
 };
 use clap::Parser;
 use color_eyre::{owo_colors::OwoColorize, Section, SectionExt};
-use const_format::formatcp;
+use const_format::{concatcp, formatcp};
 use eyre::{Context, OptionExt};
 
-const AFTER_LONG_HELP: &str = color_print::cstr!(
+const EXAMPLE_SECTION: &str = color_print::cstr!(
     r#"<bold><underline>Examples:</underline></bold>
   # toggle between blue-light-filter and off
   hyprshade toggle blue-light-filter
@@ -30,11 +30,15 @@ const AFTER_LONG_HELP: &str = color_print::cstr!(
 
   # toggle between blue-light-filter and automatically inferred shader
   hyprshade toggle blue-light-filter --fallback-auto
-
-<bold><underline>Note:</underline></bold>
-  This is mostly intended for use as a keybind. `hyprshade toggle <<SHADER>> --fallback-auto` probably does what you want. 
 "#
 );
+const NOTE_SECTION: &str = color_print::cstr!(
+    r#"<bold><underline>Note:</underline></bold>
+  This is mostly intended for use as a keybind. `hyprshade toggle <<SHADER>> --fallback-auto` probably does what you want.
+"#
+);
+const AFTER_LONG_HELP: &str = concatcp!(EXAMPLE_SECTION, "\n", NOTE_SECTION);
+const AFTER_HELP: &str = NOTE_SECTION;
 
 const SHADER_HELP_LONG: &str = formatcp!(
     "{}\n\
@@ -54,7 +58,7 @@ shader and FALLBACK defaulting to off.
 equal to it, or using the default shader otherwise.
 */
 #[derive(Debug, Parser)]
-#[command(after_long_help = AFTER_LONG_HELP)]
+#[command(after_help = AFTER_HELP, after_long_help = AFTER_LONG_HELP)]
 pub struct Toggle {
     #[arg(help = SHADER_HELP, long_help = SHADER_HELP_LONG)]
     shader: Option<String>,
