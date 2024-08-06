@@ -66,16 +66,14 @@ impl CommandExecute for Toggle {
             (None, false, false) => None,
             (Some(fallback), false, false) => Some(Resolver::with_cli_arg(fallback).resolve()?),
             (None, true, false) => {
-                let name = &config
+                let name = config
                     .ok_or_eyre("--fallback-default requires a config")
                     .and_then(|c| {
                         c.default_shader()
                             .ok_or_eyre("no default shader found in config")
                     })
-                    .with_suggestion(|| {
-                        format!("For more information, see {README_CONFIGURATION}")
-                    })?
-                    .name;
+                    .with_suggestion(|| format!("For more information, see {README_CONFIGURATION}"))
+                    .map(|s| &s.name)?;
                 Some(Resolver::with_name(name).resolve()?)
             }
             (None, false, true) => todo!("getting scheduled shader from config"),
