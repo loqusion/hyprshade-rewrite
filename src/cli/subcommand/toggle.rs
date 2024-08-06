@@ -72,18 +72,16 @@ impl CommandExecute for Toggle {
                 config
                     .ok_or_eyre("no configuration file found")
                     .warning("A configuration file is required to use --fallback-default")
-                    .and_then(|c| {
-                        c.default_shader()
+                    .and_then(|config| {
+                        let default_shader = config.default_shader()
                             .ok_or_eyre("no default shader found in config")
-                            .with_section(|| c.path().display().yellow().to_string().header("Configuration"))
-                            .suggestion("Make sure a default shader is defined (default = true)")
-                            .and_then(|s| {
-                                Some(Resolver::with_name(&s.name).resolve())
-                                    .transpose()
-                                    .wrap_err("error resolving default shader in config")
-                                    .with_section(|| c.path().display().yellow().to_string().header("Configuration"))
-                                    .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
-                            })
+                            .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
+                            .suggestion("Make sure a default shader is defined (default = true)")?;
+                        Some(Resolver::with_name(&default_shader.name).resolve())
+                            .transpose()
+                            .wrap_err("error resolving default shader in config")
+                            .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
+                            .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
                     })
                     .with_suggestion(|| format!("For more information, see {README_CONFIGURATION}"))?
             }
@@ -91,27 +89,25 @@ impl CommandExecute for Toggle {
                 config
                     .ok_or_eyre("no configuration file found")
                     .warning("A configuration file is required to use --fallback-auto")
-                    .and_then(|c| {
+                    .and_then(|config| {
                         if shader.is_some() {
-                            Schedule::with_config(c).scheduled_shader(&now.time())
+                            Schedule::with_config(config).scheduled_shader(&now.time())
                                 .wrap_err("error resolving shader in config")
-                                .with_section(|| c.path().display().yellow().to_string().header("Configuration"))
+                                .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
                                 .note("--fallback-auto tried to use the currently scheduled shader")
                                 .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
                         } else {
-                            c.default_shader()
+                            let default_shader = config.default_shader()
                                 .ok_or_eyre("no default shader found in config")
-                                .with_section(|| c.path().display().yellow().to_string().header("Configuration"))
+                                .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
                                 .note("--fallback-auto tried to use the default shader because you didn't specify SHADER")
-                                .suggestion("Define a default shader (default = true), or specify SHADER in cli arguments")
-                                .and_then(|s| {
-                                    Some(Resolver::with_name(&s.name).resolve())
-                                        .transpose()
-                                        .wrap_err("error resolving default shader in config")
-                                        .with_section(|| c.path().display().yellow().to_string().header("Configuration"))
-                                        .note("--fallback-auto tried to use the default shader because you didn't specify SHADER")
-                                        .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
-                                })
+                                .suggestion("Define a default shader (default = true), or specify SHADER in cli arguments")?;
+                            Some(Resolver::with_name(&default_shader.name).resolve())
+                                .transpose()
+                                .wrap_err("error resolving default shader in config")
+                                .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
+                                .note("--fallback-auto tried to use the default shader because you didn't specify SHADER")
+                                .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
                         }
                     })
                     .with_suggestion(|| format!("For more information, see {README_CONFIGURATION}"))?
@@ -128,10 +124,10 @@ impl CommandExecute for Toggle {
             None => config
                 .ok_or_eyre("no configuration file found")
                 .warning("A configuration file is required to call this command without SHADER")
-                .and_then(|c| {
-                    Schedule::with_config(c).scheduled_shader(&now.time())
+                .and_then(|config| {
+                    Schedule::with_config(config).scheduled_shader(&now.time())
                         .wrap_err("error resolving shader in config")
-                        .with_section(|| c.path().display().yellow().to_string().header("Configuration"))
+                        .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
                         .note("Since you omitted SHADER from cli arguments, it was inferred from the schedule in your configuration")
                         .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
                 })
@@ -148,7 +144,9 @@ impl CommandExecute for Toggle {
 
         if let Some(designated_shader) = designated_shader {
             let mut designated_data = designated_data;
-            if let Some(config_data) = config.and_then(|c| c.data(designated_shader.name())) {
+            if let Some(config_data) =
+                config.and_then(|config| config.data(designated_shader.name()))
+            {
                 designated_data.merge_deep_keep(config_data.clone());
             }
             let designated_data = designated_data;
