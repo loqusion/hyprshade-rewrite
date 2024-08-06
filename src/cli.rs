@@ -37,7 +37,7 @@ impl Cli {
     pub fn config(&self) -> Option<Config> {
         if let Some(path) = &self.config {
             return Some(Config::read(path).unwrap_or_else(|err| {
-                Err(err).expect(&format!("error reading config at {:?}", path))
+                Err(err).expect(&format!("error reading config at {}", path.display()))
             }));
         }
 
