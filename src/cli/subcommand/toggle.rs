@@ -144,12 +144,7 @@ impl CommandExecute for Toggle {
                             .wrap_err("error resolving shader in config")
                             .with_section(|| config.path().display().yellow().to_string().header("Configuration"))?;
                         if shader == scheduled_shader {
-                            let default_shader = config.default_shader()
-                                .ok_or_eyre("no default shader found in config")
-                                .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
-                                .note("--fallback-auto tried to use the default shader because you didn't specify SHADER")
-                                .suggestion("Define a default shader (default = true), or specify SHADER in cli arguments")?;
-                            Some(Resolver::with_name(&default_shader.name).resolve())
+                            config.default_shader().map(|default_shader| Resolver::with_name(&default_shader.name).resolve())
                                 .transpose()
                                 .wrap_err("error resolving default shader in config")
                                 .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
