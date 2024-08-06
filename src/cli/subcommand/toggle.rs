@@ -3,7 +3,7 @@ use std::process::ExitCode;
 use crate::{
     cli::{
         arg::{
-            help::{SHADER_HELP, SHADER_HELP_LONG},
+            help::{SHADER_HELP, SHADER_HELP_LONG as SHADER_HELP_LONG_SOURCE},
             var::{VarArg, VarArgParser},
         },
         CommandExecute,
@@ -17,12 +17,44 @@ use crate::{
 };
 use clap::Parser;
 use color_eyre::{owo_colors::OwoColorize, Section, SectionExt};
+use const_format::formatcp;
 use eyre::{Context, OptionExt};
 
+const AFTER_LONG_HELP: &str = color_print::cstr!(
+    r#"<bold><underline>Examples:</underline></bold>
+  # toggle between blue-light-filter and off
+  hyprshade toggle blue-light-filter
+
+  # toggle between scheduled shader and off
+  hyprshade toggle
+
+  # toggle between blue-light-filter and automatically inferred shader
+  hyprshade toggle blue-light-filter --fallback-auto
+
+<bold><underline>Note:</underline></bold>
+  This is mostly intended for use as a keybind. `hyprshade toggle <<SHADER>> --fallback-auto` probably does what you want. 
+"#
+);
+
+const SHADER_HELP_LONG: &str = formatcp!(
+    "{}\n\
+    \n\
+    If omitted, will be inferred from configuration schedule\
+",
+    SHADER_HELP_LONG_SOURCE
+);
+
 /**
-TODO: write help text
+Toggle between different shaders
+
+Specifically, toggle between SHADER and FALLBACK, with SHADER defaulting to the currently scheduled
+shader and FALLBACK defaulting to off.
+
+--fallback-auto shader inference works by using the currently scheduled shader if SHADER is not
+equal to it, or using the default shader otherwise.
 */
 #[derive(Debug, Parser)]
+#[command(after_long_help = AFTER_LONG_HELP)]
 pub struct Toggle {
     #[arg(help = SHADER_HELP, long_help = SHADER_HELP_LONG)]
     shader: Option<String>,
@@ -31,12 +63,15 @@ pub struct Toggle {
     #[arg(long, value_name = "KEY=VALUE", value_parser = VarArgParser)]
     var: Vec<VarArg>,
 
+    /// Specify fallback shader
     #[arg(long, group = "fallback_args")]
     fallback: Option<String>,
 
+    /// Use default shader as fallback
     #[arg(long, group = "fallback_args")]
     fallback_default: bool,
 
+    /// Infer fallback shader from config
     #[arg(long, group = "fallback_args")]
     fallback_auto: bool,
 
