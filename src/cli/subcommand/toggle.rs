@@ -11,12 +11,13 @@ use crate::{
     config::Config,
     constants::README_CONFIGURATION,
     resolver::Resolver,
+    schedule::Schedule,
     shader::Shader,
     template::MergeDeep,
 };
 use clap::Parser;
-use color_eyre::Section;
-use eyre::OptionExt;
+use color_eyre::{owo_colors::OwoColorize, Section, SectionExt};
+use eyre::{Context, OptionExt};
 
 /**
 TODO: write help text
@@ -58,6 +59,8 @@ impl CommandExecute for Toggle {
             var_fallback,
         } = self;
 
+        let now = chrono::Local::now();
+
         // Eagerly evaluate --var and --var-fallback so that feedback is presented unconditionally
         let fallback_data = VarArg::merge_into_data(var_fallback, "var-fallback")?;
         let shader_data = VarArg::merge_into_data(var, "var")?;
@@ -76,7 +79,37 @@ impl CommandExecute for Toggle {
                     .map(|s| &s.name)?;
                 Some(Resolver::with_name(name).resolve()?)
             }
-            (None, false, true) => todo!("getting scheduled shader from config"),
+            (None, false, true) => {
+                config
+                    .ok_or_eyre("no configuration file found")
+                    .warning("A configuration file is required to use --fallback-auto")
+                    .and_then(|c| {
+                        if shader.is_some() {
+                            Schedule::with_config(c).scheduled_shader(&now.time())
+                                .wrap_err("error resolving shader in config")
+                                .with_section(|| c.path().display().yellow().to_string().header("Configuration"))
+                                .note("--fallback-auto tried to use the currently scheduled shader")
+                                .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
+                        } else {
+                            c.default_shader()
+                                .ok_or_eyre("no default shader found in config")
+                                .with_section(|| c.path().display().yellow().to_string().header("Configuration"))
+                                .note("--fallback-auto tried to use the default shader because you didn't specify SHADER")
+                                .suggestion("Define a default shader (default = true), or specify SHADER in cli arguments")
+                                .and_then(|s| {
+                                    Some(Resolver::with_name(&s.name).resolve())
+                                        .transpose()
+                                        .wrap_err("error resolving shader in config")
+                                        .with_section(|| c.path().display().yellow().to_string().header("Configuration"))
+                                        .note("--fallback-auto tried to use the default shader because you didn't specify SHADER")
+                                        .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
+                                })
+                        }
+                    })
+                    .with_suggestion(|| {
+                        format!("For more information, see {README_CONFIGURATION}")
+                    })?
+            }
             _ => {
                 unreachable!(
                     "--fallback, --fallback-default, and --fallback-auto are mutually exclusive"
@@ -86,7 +119,17 @@ impl CommandExecute for Toggle {
 
         let shader = match &shader {
             Some(shader) => Some(Resolver::with_cli_arg(shader).resolve()?),
-            None => todo!("shader inference from config"),
+            None => config
+                .ok_or_eyre("no configuration file found")
+                .warning("A configuration file is required to call this command without SHADER")
+                .and_then(|c| {
+                    Schedule::with_config(c).scheduled_shader(&now.time())
+                        .wrap_err("error resolving shader in config")
+                        .with_section(|| c.path().display().yellow().to_string().header("Configuration"))
+                        .note("If you omit SHADER from cli arguments, it will be inferred from the schedule in your configuration")
+                        .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
+                })
+                .with_suggestion(|| format!("For more information, see {README_CONFIGURATION}"))?,
         };
 
         let current_shader = Shader::current()?;
