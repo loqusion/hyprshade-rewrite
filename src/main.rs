@@ -5,6 +5,7 @@ mod constants;
 mod dirs;
 mod hyprctl;
 mod resolver;
+mod schedule;
 mod shader;
 mod template;
 mod util;
