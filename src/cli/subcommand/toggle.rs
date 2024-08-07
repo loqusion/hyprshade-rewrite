@@ -63,7 +63,7 @@ pub struct Toggle {
     #[arg(help = SHADER_HELP, long_help = SHADER_HELP_LONG)]
     shader: Option<String>,
 
-    /// Configuration variable used in rendering <SHADER> (may be specified multiple times)
+    /// Configuration variable used in rendering SHADER (may be specified multiple times)
     #[arg(long, value_name = "KEY=VALUE", value_parser = VarArgParser)]
     var: Vec<VarArg>,
 
