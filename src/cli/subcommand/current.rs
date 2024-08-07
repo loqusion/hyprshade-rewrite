@@ -8,14 +8,23 @@ use tracing::warn;
 Show the current shader
 */
 #[derive(Debug, Parser)]
-pub struct Current;
+pub struct Current {
+    /// Show additional information
+    #[arg(short, long)]
+    long: bool,
+}
 
 impl CommandExecute for Current {
     #[tracing::instrument(level = "debug", skip_all)]
     fn execute(self, _config: Option<&Config>) -> eyre::Result<ExitCode> {
+        let Self { long } = self;
+
         if let Some(shader) = Shader::current()? {
-            dbg!(&shader);
-            println!("{}", shader);
+            if long {
+                todo!("current --long")
+            } else {
+                println!("{}", shader.name());
+            }
         }
 
         Ok(ExitCode::SUCCESS)

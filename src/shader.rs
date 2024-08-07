@@ -85,12 +85,6 @@ impl Shader {
     }
 }
 
-impl std::fmt::Display for Shader {
-    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!("Display for Shader")
-    }
-}
-
 impl PartialEq for Shader {
     fn eq(&self, other: &Self) -> bool {
         match (&self.0, &other.0) {
