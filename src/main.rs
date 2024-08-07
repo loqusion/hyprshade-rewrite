@@ -24,7 +24,7 @@ fn main() -> eyre::Result<ExitCode> {
 
     cli.instrumentation.setup()?;
 
-    let config = cli.config();
+    let config = cli.config()?;
 
     cli.execute(config.as_ref())
 }

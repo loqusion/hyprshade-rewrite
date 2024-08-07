@@ -9,7 +9,7 @@ use std::{path::PathBuf, process::ExitCode};
 
 use self::{instrumentation::Instrumentation, subcommand::HyprshadeSubcommand};
 use crate::{
-    config::Config,
+    config::{Config, ConfigReadError},
     constants::{HYPRLAND_CONFIG_DIR, HYPRSHADE_CONFIG_DIR, HYPRSHADE_CONFIG_FILE_ENV},
 };
 use clap::Parser;
@@ -33,24 +33,23 @@ pub struct Cli {
 }
 
 impl Cli {
-    #[allow(clippy::unnecessary_literal_unwrap, clippy::expect_fun_call)]
-    pub fn config(&self) -> Option<Config> {
+    pub fn config(&self) -> Result<Option<Config>, ConfigReadError> {
         if let Some(path) = &self.config {
-            return Some(Config::read(path).unwrap_or_else(|err| {
-                Err(err).expect(&format!("error reading config at {}", path.display()))
-            }));
+            return Some(Config::read(path)).transpose();
         }
 
         for path in &[
             HYPRLAND_CONFIG_DIR.to_owned().join("hyprshade.toml"),
             HYPRSHADE_CONFIG_DIR.to_owned().join("config.toml"),
         ] {
-            if let Ok(config) = Config::read(path) {
-                return Some(config);
+            match Config::read(path) {
+                Ok(config) => return Ok(Some(config)),
+                Err(ConfigReadError::Io { .. }) => continue,
+                Err(err @ ConfigReadError::Parse { .. }) => return Err(err),
             }
         }
 
-        None
+        Ok(None)
     }
 }
 

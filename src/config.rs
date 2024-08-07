@@ -1,5 +1,5 @@
 use std::{
-    fs,
+    fs, io,
     path::{Path, PathBuf},
     str::FromStr,
 };
@@ -34,11 +34,21 @@ pub struct Shader {
 }
 
 impl Config {
-    pub fn read<P: AsRef<Path>>(path: P) -> eyre::Result<Self> {
+    pub fn read<P: AsRef<Path>>(path: P) -> Result<Self, ConfigReadError> {
         let path = path.as_ref();
-        let contents = fs::read_to_string(path)?;
+
+        let contents = fs::read_to_string(path).map_err(|source| ConfigReadError::Io {
+            path: path.to_owned(),
+            source,
+        })?;
+        let config =
+            ConfigDocument::from_str(&contents).map_err(|source| ConfigReadError::Parse {
+                path: path.to_owned(),
+                source,
+            })?;
+
         Ok(Self {
-            config: ConfigDocument::from_str(&contents)?,
+            config,
             path: path.to_owned(),
         })
     }
@@ -85,6 +95,18 @@ impl From<CompatConfig> for ConfigDocument {
         let CompatConfig { shader } = value;
         Self { shader }
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
+pub enum ConfigReadError {
+    #[error("reading config file at {}", path.display())]
+    Io { path: PathBuf, source: io::Error },
+    #[error("parsing config file at {}", path.display())]
+    Parse {
+        path: PathBuf,
+        source: toml::de::Error,
+    },
 }
 
 #[cfg(test)]
