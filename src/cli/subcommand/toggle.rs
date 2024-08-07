@@ -152,7 +152,6 @@ impl CommandExecute for Toggle {
                                 .transpose()
                                 .wrap_err("error resolving default shader in config")
                                 .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
-                                .note("--fallback-auto tried to use the default shader because you didn't specify SHADER")
                                 .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
                         } else {
                             Ok(scheduled_shader)
