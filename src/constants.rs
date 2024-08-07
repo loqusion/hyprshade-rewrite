@@ -20,3 +20,4 @@ lazy_static! {
 }
 
 pub const README_CONFIGURATION: &str = concat!(env!("CARGO_PKG_REPOSITORY"), "#configuration");
+pub const README_SCHEDULING: &str = concat!(env!("CARGO_PKG_REPOSITORY"), "#scheduling");
