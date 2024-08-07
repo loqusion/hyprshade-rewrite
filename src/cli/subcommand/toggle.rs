@@ -34,7 +34,7 @@ const EXAMPLE_SECTION: &str = color_print::cstr!(
 );
 const NOTE_SECTION: &str = color_print::cstr!(
     r#"<bold><underline>Note:</underline></bold>
-  This is mostly intended for use as a keybind. `hyprshade toggle <<SHADER>> --fallback-auto` probably does what you want.
+  This subcommand is mostly intended for use as a keybind. `hyprshade toggle <<SHADER>> --fallback-auto` probably does what you want.
 "#
 );
 const AFTER_HELP: &str = NOTE_SECTION;
