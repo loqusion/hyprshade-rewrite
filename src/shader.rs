@@ -78,7 +78,7 @@ impl Shader {
                 let prefix =
                     PathExt::file_prefix(path).unwrap_or_else(|| panic!("invalid path: {path:?}"));
                 std::str::from_utf8(prefix.as_bytes())
-                    .unwrap_or_else(|err| panic!("error when converting {path:?}: {err}"))
+                    .unwrap_or_else(|err| panic!("when converting {path:?}: {err}"))
             }
             ShaderInner::Builtin(builtin) => builtin.name(),
         }

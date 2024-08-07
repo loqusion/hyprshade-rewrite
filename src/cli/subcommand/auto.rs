@@ -36,7 +36,7 @@ impl CommandExecute for Auto {
             .with_suggestion(|| format!("For more information, see {README_CONFIGURATION}"))?;
 
         if let Some(shader) = Schedule::with_config(config).scheduled_shader(&now.time())
-            .wrap_err("error resolving shader in config")
+            .wrap_err("resolving shader in config")
             .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
             .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
             .with_suggestion(|| format!("For more information, see {README_CONFIGURATION}"))?

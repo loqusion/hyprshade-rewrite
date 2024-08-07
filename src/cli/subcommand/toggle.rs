@@ -111,7 +111,7 @@ impl CommandExecute for Toggle {
                 .warning("A configuration file is required to call this command without SHADER")
                 .and_then(|config| {
                     Schedule::with_config(config).scheduled_shader(&now.time())
-                        .wrap_err("error resolving shader in config")
+                        .wrap_err("resolving shader in config")
                         .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
                         .note("Since you omitted SHADER from cli arguments, it was inferred from the schedule in your configuration")
                         .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
@@ -133,7 +133,7 @@ impl CommandExecute for Toggle {
                             .suggestion("Make sure a default shader is defined (default = true)")?;
                         Some(Resolver::with_name(&default_shader.name).resolve())
                             .transpose()
-                            .wrap_err("error resolving default shader in config")
+                            .wrap_err("resolving default shader in config")
                             .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
                             .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
                     })
@@ -145,12 +145,12 @@ impl CommandExecute for Toggle {
                     .warning("A configuration file is required to use --fallback-auto")
                     .and_then(|config| {
                         let scheduled_shader = Schedule::with_config(config).scheduled_shader(&now.time())
-                            .wrap_err("error resolving shader in config")
+                            .wrap_err("resolving shader in config")
                             .with_section(|| config.path().display().yellow().to_string().header("Configuration"))?;
                         if shader == scheduled_shader {
                             config.default_shader().map(|default_shader| Resolver::with_name(&default_shader.name).resolve())
                                 .transpose()
-                                .wrap_err("error resolving default shader in config")
+                                .wrap_err("resolving default shader in config")
                                 .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
                                 .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
                         } else {
