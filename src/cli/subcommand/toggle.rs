@@ -37,8 +37,8 @@ const NOTE_SECTION: &str = color_print::cstr!(
   This is mostly intended for use as a keybind. `hyprshade toggle <<SHADER>> --fallback-auto` probably does what you want.
 "#
 );
-const AFTER_LONG_HELP: &str = concatcp!(EXAMPLE_SECTION, "\n", NOTE_SECTION);
 const AFTER_HELP: &str = NOTE_SECTION;
+const AFTER_LONG_HELP: &str = concatcp!(EXAMPLE_SECTION, "\n", NOTE_SECTION);
 
 const SHADER_HELP_LONG: &str = formatcp!(
     "{}\n\
