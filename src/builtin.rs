@@ -10,27 +10,32 @@ use crate::{
 };
 use phf::phf_map;
 
-pub struct BuiltinShaders(phf::Map<&'static [u8], BuiltinShaderValue>);
-
 #[derive(Debug, Clone)]
-pub struct BuiltinShader(&'static str, &'static BuiltinShaderValue);
+pub struct BuiltinShader {
+    name: &'static str,
+    value: &'static BuiltinShaderValue,
+}
+
+pub struct BuiltinShaders {
+    inner: phf::Map<&'static [u8], BuiltinShaderValue>,
+}
 
 #[derive(Debug)]
-pub struct BuiltinShaderValue {
+struct BuiltinShaderValue {
     contents: &'static str,
     is_template: bool,
     metadata: Metadata,
 }
 
 #[derive(Debug)]
-pub struct Metadata {
+struct Metadata {
     full_name: &'static str,
     description: &'static str,
     variables: phf::Map<&'static str, Variable>,
 }
 
 #[derive(Debug)]
-pub enum Variable {
+enum Variable {
     Float {
         description: &'static str,
         min: f64,
@@ -46,40 +51,46 @@ pub enum Variable {
 }
 
 impl BuiltinShaders {
-    pub fn get_entry<K>(&'static self, key: &K) -> Option<BuiltinShader>
+    pub fn get<K>(&'static self, key: &K) -> Option<BuiltinShader>
     where
         K: AsRef<[u8]> + ?Sized,
     {
-        self.0.get_entry(key.as_ref()).map(|(key, value)|
+        self.inner
+            .get_entry(key.as_ref())
+            .map(|(key, value)| BuiltinShader {
                 // SAFETY: All keys are valid UTF-8 strings.
-                unsafe { BuiltinShader(std::str::from_utf8_unchecked(key), value) })
+                name: unsafe { std::str::from_utf8_unchecked(key) },
+                value,
+            })
     }
-}
 
-impl BuiltinShader {
-    pub fn write(&self) -> io::Result<PathBuf> {
-        let out_path = HYPRSHADE_RUNTIME_DIR
-            .to_owned()
-            .join(format!("{}.glsl", self.0));
-        fs::create_dir_all(out_path.parent().unwrap())?;
-        fs::write(&out_path, self.1.contents)?;
-        Ok(out_path)
+    const fn new(inner: phf::Map<&'static [u8], BuiltinShaderValue>) -> Self {
+        Self { inner }
     }
 }
 
 impl BuiltinShader {
     pub fn name(&self) -> &'static str {
-        self.0
+        self.name
     }
 
     pub fn is_template(&self) -> bool {
-        self.1.is_template
+        self.value.is_template
+    }
+
+    pub fn write(&self) -> io::Result<PathBuf> {
+        let out_path = HYPRSHADE_RUNTIME_DIR
+            .to_owned()
+            .join(format!("{}.glsl", self.name()));
+        fs::create_dir_all(out_path.parent().unwrap())?;
+        fs::write(&out_path, self.value.contents)?;
+        Ok(out_path)
     }
 
     pub fn render(&self, data: &TemplateDataMap) -> eyre::Result<PathBuf> {
         debug_assert!(self.is_template());
 
-        let template = mustache::compile_str(self.1.contents)?;
+        let template = mustache::compile_str(self.value.contents)?;
         let data = {
             let mut self_data = self.data();
             self_data.merge_deep_force(data.clone());
@@ -87,7 +98,7 @@ impl BuiltinShader {
         };
         let out_path = HYPRSHADE_RUNTIME_DIR
             .to_owned()
-            .join(format!("{}.glsl", self.0));
+            .join(format!("{}.glsl", self.name()));
         fs::create_dir_all(out_path.parent().unwrap())?;
         let mut out_file = File::create(&out_path)?;
         template.render(&mut out_file, &data)?;
@@ -96,7 +107,7 @@ impl BuiltinShader {
     }
 
     fn data(&self) -> TemplateDataMap {
-        let variables = &self.1.metadata.variables;
+        let variables = &self.value.metadata.variables;
         TemplateDataMap::from_iter(
             variables
                 .into_iter()
@@ -107,7 +118,7 @@ impl BuiltinShader {
 
 impl PartialEq for BuiltinShader {
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.0, other.0) && std::ptr::eq(self.1, other.1)
+        std::ptr::eq(self.name, other.name) && std::ptr::eq(self.value, other.value)
     }
 }
 impl Eq for BuiltinShader {}
@@ -127,7 +138,7 @@ impl From<&Variable> for TemplateData {
     }
 }
 
-pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders(phf_map! {
+pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders::new(phf_map! {
     b"blue-light-filter" => BuiltinShaderValue {
         contents: include_str!("shaders/blue-light-filter.glsl.mustache"),
         is_template: true,
@@ -271,13 +282,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn get_entry_pointer_equality() {
-        let expected = BUILTIN_SHADERS.0.get_entry(b"blue-light-filter").unwrap();
-        let actual = BUILTIN_SHADERS.get_entry("blue-light-filter").unwrap();
+    fn entry_pointer_equality() {
+        let raw_entry = BUILTIN_SHADERS
+            .inner
+            .get_entry(b"blue-light-filter")
+            .unwrap();
+        let wrapper_entry = BUILTIN_SHADERS.get("blue-light-filter").unwrap();
         assert!(std::ptr::eq(
-            *expected.0,
-            actual.0 as *const str as *const [u8]
+            *raw_entry.0,
+            wrapper_entry.name as *const str as *const [u8]
         ));
-        assert!(std::ptr::eq(expected.1, actual.1));
+        assert!(std::ptr::eq(raw_entry.1, wrapper_entry.value));
     }
 }
