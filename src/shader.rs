@@ -20,7 +20,7 @@ pub struct Shader(ShaderInner);
 #[derive(Debug)]
 enum ShaderInner {
     Path(PathBuf),
-    Builtin(BuiltinShader<'static>),
+    Builtin(BuiltinShader),
 }
 
 impl Shader {
@@ -28,7 +28,7 @@ impl Shader {
         Self(ShaderInner::Path(path_buf))
     }
 
-    pub fn from_builtin(builtin_shader: BuiltinShader<'static>) -> Self {
+    pub fn from_builtin(builtin_shader: BuiltinShader) -> Self {
         Self(ShaderInner::Builtin(builtin_shader))
     }
 

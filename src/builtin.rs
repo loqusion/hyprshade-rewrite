@@ -13,7 +13,7 @@ use phf::phf_map;
 pub struct BuiltinShaders(phf::Map<&'static [u8], BuiltinShaderValue>);
 
 #[derive(Debug)]
-pub struct BuiltinShader<'a>(&'static str, &'a BuiltinShaderValue);
+pub struct BuiltinShader(&'static str, &'static BuiltinShaderValue);
 
 #[derive(Debug)]
 pub struct BuiltinShaderValue {
@@ -46,7 +46,7 @@ pub enum Variable {
 }
 
 impl BuiltinShaders {
-    pub fn get_entry<K>(&self, key: &K) -> Option<BuiltinShader>
+    pub fn get_entry<K>(&'static self, key: &K) -> Option<BuiltinShader>
     where
         K: AsRef<[u8]> + ?Sized,
     {
@@ -56,7 +56,7 @@ impl BuiltinShaders {
     }
 }
 
-impl BuiltinShader<'_> {
+impl BuiltinShader {
     pub fn write(&self) -> io::Result<PathBuf> {
         let out_path = HYPRSHADE_RUNTIME_DIR
             .to_owned()
@@ -67,7 +67,7 @@ impl BuiltinShader<'_> {
     }
 }
 
-impl BuiltinShader<'_> {
+impl BuiltinShader {
     pub fn name(&self) -> &'static str {
         self.0
     }
@@ -105,12 +105,12 @@ impl BuiltinShader<'_> {
     }
 }
 
-impl PartialEq for BuiltinShader<'_> {
+impl PartialEq for BuiltinShader {
     fn eq(&self, other: &Self) -> bool {
         std::ptr::eq(self.0, other.0) && std::ptr::eq(self.1, other.1)
     }
 }
-impl Eq for BuiltinShader<'_> {}
+impl Eq for BuiltinShader {}
 
 impl From<&Variable> for TemplateData {
     fn from(value: &Variable) -> Self {
