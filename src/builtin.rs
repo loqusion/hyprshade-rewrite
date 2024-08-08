@@ -12,7 +12,7 @@ use phf::phf_map;
 
 pub struct BuiltinShaders(phf::Map<&'static [u8], BuiltinShaderValue>);
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BuiltinShader(&'static str, &'static BuiltinShaderValue);
 
 #[derive(Debug)]
