@@ -6,9 +6,10 @@ use crate::{
     constants::{README_CONFIGURATION, README_SCHEDULING},
     schedule::Schedule,
     shader::Shader,
+    util::ConfigSection,
 };
 use clap::Parser;
-use color_eyre::{owo_colors::OwoColorize, Section, SectionExt};
+use color_eyre::Section;
 use const_format::formatcp;
 use eyre::{Context, OptionExt};
 
@@ -37,7 +38,7 @@ impl CommandExecute for Auto {
 
         if let Some(shader) = Schedule::with_config(config).scheduled_shader(&now.time())
             .wrap_err("resolving shader in config")
-            .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
+            .config_section(config.path())
             .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
             .with_suggestion(|| format!("For more information, see {README_CONFIGURATION}"))?
         {

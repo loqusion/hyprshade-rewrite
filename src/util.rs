@@ -1,5 +1,20 @@
 use std::{ffi::OsStr, path::Path};
 
+use color_eyre::{owo_colors::OwoColorize, Section, SectionExt};
+
+pub trait ConfigSection: Section {
+    fn config_section(self, path: &Path) -> Self::Return;
+}
+
+impl<T, E> ConfigSection for eyre::Result<T, E>
+where
+    E: Into<eyre::Report>,
+{
+    fn config_section(self, path: &Path) -> Self::Return {
+        self.with_section(|| path.display().yellow().to_string().header("Configuration"))
+    }
+}
+
 pub trait PathExt {
     #[must_use]
     fn file_prefix(&self) -> Option<&OsStr>;

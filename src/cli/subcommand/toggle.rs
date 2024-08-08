@@ -14,9 +14,10 @@ use crate::{
     schedule::Schedule,
     shader::Shader,
     template::MergeDeep,
+    util::ConfigSection,
 };
 use clap::Parser;
-use color_eyre::{owo_colors::OwoColorize, Section, SectionExt};
+use color_eyre::Section;
 use const_format::{concatcp, formatcp};
 use eyre::{Context, OptionExt};
 
@@ -112,7 +113,7 @@ impl CommandExecute for Toggle {
                 .and_then(|config| {
                     Schedule::with_config(config).scheduled_shader(&now.time())
                         .wrap_err("resolving shader in config")
-                        .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
+                        .config_section(config.path())
                         .note("Since you omitted SHADER from cli arguments, it was inferred from the schedule in your configuration")
                         .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
                 })
@@ -129,12 +130,12 @@ impl CommandExecute for Toggle {
                     .and_then(|config| {
                         let default_shader = config.default_shader()
                             .ok_or_eyre("no default shader found in config")
-                            .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
+                            .config_section(config.path())
                             .suggestion("Make sure a default shader is defined (default = true)")?;
                         Some(Resolver::with_name(&default_shader.name).resolve())
                             .transpose()
                             .wrap_err("resolving default shader in config")
-                            .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
+                            .config_section(config.path())
                             .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
                     })
                     .with_suggestion(|| format!("For more information, see {README_CONFIGURATION}"))?
@@ -146,12 +147,12 @@ impl CommandExecute for Toggle {
                     .and_then(|config| {
                         let scheduled_shader = Schedule::with_config(config).scheduled_shader(&now.time())
                             .wrap_err("resolving shader in config")
-                            .with_section(|| config.path().display().yellow().to_string().header("Configuration"))?;
+                            .config_section(config.path())?;
                         if shader == scheduled_shader {
                             config.default_shader().map(|default_shader| Resolver::with_name(&default_shader.name).resolve())
                                 .transpose()
                                 .wrap_err("resolving default shader in config")
-                                .with_section(|| config.path().display().yellow().to_string().header("Configuration"))
+                                .config_section(config.path())
                                 .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
                         } else {
                             Ok(scheduled_shader)
