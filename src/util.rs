@@ -1,6 +1,12 @@
-use std::{ffi::OsStr, path::Path};
+use std::{
+    ffi::OsStr,
+    fs, io,
+    path::{Path, PathBuf},
+};
 
 use color_eyre::{owo_colors::OwoColorize, Section, SectionExt};
+
+use crate::constants::HYPRSHADE_RUNTIME_DIR;
 
 pub trait ConfigSection: Section {
     fn config_section(self, path: &Path) -> Self::Return;
@@ -13,6 +19,22 @@ where
     fn config_section(self, path: &Path) -> Self::Return {
         self.with_section(|| path.display().yellow().to_string().header("Configuration"))
     }
+}
+
+pub fn make_runtime_path<P: AsRef<Path>>(file_name: P) -> io::Result<PathBuf> {
+    make_runtime_path_impl(file_name.as_ref())
+}
+
+fn make_runtime_path_impl(file_name: &Path) -> io::Result<PathBuf> {
+    let out_path = HYPRSHADE_RUNTIME_DIR.to_owned().join(file_name);
+    let parent = out_path.parent().ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::Other,
+            format!("failed to get parent of {out_path:?}"),
+        )
+    })?;
+    fs::create_dir_all(parent)?;
+    Ok(out_path)
 }
 
 pub trait PathExt {

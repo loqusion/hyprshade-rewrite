@@ -1,15 +1,15 @@
 use std::{
-    fs::{self, File},
+    borrow::Cow,
+    fs::File,
     os::unix::ffi::OsStrExt,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use crate::{
     builtin::BuiltinShader,
-    constants::HYPRSHADE_RUNTIME_DIR,
     hyprctl,
     template::TemplateDataMap,
-    util::{rsplit_file_at_dot, PathExt},
+    util::{make_runtime_path, rsplit_file_at_dot, PathExt},
 };
 
 const TEMPLATE_EXTENSION: &str = "mustache";
@@ -49,23 +49,31 @@ impl Shader {
     }
 
     pub fn on(&self, data: &TemplateDataMap) -> eyre::Result<()> {
-        let path = match &self.0 {
-            ShaderInner::Path(path) => match path.file_name().map(rsplit_file_at_dot) {
-                Some((Some(prefix), Some(extension))) if extension == TEMPLATE_EXTENSION => {
+        let path: Cow<Path> = match &self.0 {
+            ShaderInner::Path(path) => match path
+                .file_name()
+                .map(rsplit_file_at_dot)
+                .and_then(|v| v.0.zip(v.1))
+            {
+                Some((stem, extension)) if extension == TEMPLATE_EXTENSION => {
                     let template = mustache::compile_path(path)?;
-                    let out_path = HYPRSHADE_RUNTIME_DIR.to_owned().join(prefix);
-                    fs::create_dir_all(out_path.parent().unwrap())?;
+                    let out_path = make_runtime_path(stem)?;
                     let mut out_file = File::create(&out_path)?;
                     template.render(&mut out_file, data)?;
-                    out_path
+                    out_path.into()
                 }
-                _ => path.clone(),
+                _ => path.into(),
             },
             ShaderInner::Builtin(builtin_shader) => {
+                let file_name = format!("{}.glsl", builtin_shader.name());
+                let out_path = make_runtime_path(file_name)?;
+                let mut out_file = File::create(&out_path)?;
                 if builtin_shader.is_template() {
-                    builtin_shader.render(data)?
+                    builtin_shader.render(&mut out_file, data)?;
+                    out_path.into()
                 } else {
-                    builtin_shader.write()?
+                    builtin_shader.write(&mut out_file)?;
+                    out_path.into()
                 }
             }
         };

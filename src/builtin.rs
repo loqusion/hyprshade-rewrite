@@ -1,13 +1,6 @@
-use std::{
-    fs::{self, File},
-    io,
-    path::PathBuf,
-};
+use std::io;
 
-use crate::{
-    constants::HYPRSHADE_RUNTIME_DIR,
-    template::{MergeDeep, TemplateData, TemplateDataMap},
-};
+use crate::template::{MergeDeep, TemplateData, TemplateDataMap};
 use phf::phf_map;
 
 #[derive(Debug, Clone)]
@@ -78,32 +71,35 @@ impl BuiltinShader {
         self.value.is_template
     }
 
-    pub fn write(&self) -> io::Result<PathBuf> {
-        let out_path = HYPRSHADE_RUNTIME_DIR
-            .to_owned()
-            .join(format!("{}.glsl", self.name()));
-        fs::create_dir_all(out_path.parent().unwrap())?;
-        fs::write(&out_path, self.value.contents)?;
-        Ok(out_path)
+    pub fn write<W: io::Write>(&self, wr: &mut W) -> io::Result<()> {
+        wr.write_all(self.value.contents.as_bytes())
     }
 
-    pub fn render(&self, data: &TemplateDataMap) -> eyre::Result<PathBuf> {
+    pub fn render<W: io::Write>(
+        &self,
+        out_file: &mut W,
+        data: &TemplateDataMap,
+    ) -> Result<(), RenderError> {
         debug_assert!(self.is_template());
 
-        let template = mustache::compile_str(self.value.contents)?;
+        let template = mustache::compile_str(self.value.contents).map_err(|source| {
+            RenderError::MustacheCompile {
+                name: self.name().to_owned(),
+                source,
+            }
+        })?;
         let data = {
             let mut self_data = self.data();
             self_data.merge_deep_force(data.clone());
             self_data
         };
-        let out_path = HYPRSHADE_RUNTIME_DIR
-            .to_owned()
-            .join(format!("{}.glsl", self.name()));
-        fs::create_dir_all(out_path.parent().unwrap())?;
-        let mut out_file = File::create(&out_path)?;
-        template.render(&mut out_file, &data)?;
 
-        Ok(out_path)
+        template
+            .render(out_file, &data)
+            .map_err(|source| RenderError::MustacheRender {
+                name: self.name().to_owned(),
+                source,
+            })
     }
 
     fn data(&self) -> TemplateDataMap {
@@ -276,6 +272,21 @@ pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders::new(phf_map! {
         },
     },
 });
+
+#[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
+pub enum RenderError {
+    #[error("compiling mustache template for {name}")]
+    MustacheCompile {
+        name: String,
+        source: mustache::Error,
+    },
+    #[error("rendering mustache template for {name}")]
+    MustacheRender {
+        name: String,
+        source: mustache::Error,
+    },
+}
 
 #[cfg(test)]
 mod tests {
