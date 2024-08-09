@@ -40,6 +40,7 @@ fn make_runtime_path_impl(file_name: &Path) -> io::Result<PathBuf> {
 pub trait PathExt {
     #[must_use]
     fn file_prefix(&self) -> Option<&OsStr>;
+    #[allow(dead_code)]
     #[must_use]
     fn extension(&self) -> Option<&OsStr>;
 }

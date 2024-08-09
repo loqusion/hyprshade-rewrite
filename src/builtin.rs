@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::io;
 
 use crate::template::{MergeDeep, TemplateData, TemplateDataMap};

@@ -16,7 +16,7 @@ pub struct Install {
 
 impl CommandExecute for Install {
     #[tracing::instrument(level = "debug", skip_all)]
-    fn execute(self, config: Option<&Config>) -> eyre::Result<ExitCode> {
+    fn execute(self, _config: Option<&Config>) -> eyre::Result<ExitCode> {
         let Install { enable: _ } = self;
 
         Err(eyre!("Not implemented"))
