@@ -41,7 +41,6 @@ impl<T> TimeRange<T>
 where
     T: Ord,
 {
-    #[inline]
     pub fn contains<U>(&self, item: &U) -> bool
     where
         T: PartialOrd<U>,
