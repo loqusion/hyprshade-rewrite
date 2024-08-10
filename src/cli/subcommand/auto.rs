@@ -1,5 +1,10 @@
 use std::process::ExitCode;
 
+use clap::Parser;
+use color_eyre::Section;
+use const_format::formatcp;
+use eyre::{Context, OptionExt};
+
 use crate::{
     cli::CommandExecute,
     config::Config,
@@ -8,10 +13,6 @@ use crate::{
     shader::Shader,
     util::ConfigSection,
 };
-use clap::Parser;
-use color_eyre::Section;
-use const_format::formatcp;
-use eyre::{Context, OptionExt};
 
 const ABOUT: &str = "Activate the currently scheduled shader";
 const LONG_ABOUT: &str = formatcp!(

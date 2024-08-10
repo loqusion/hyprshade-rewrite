@@ -4,9 +4,10 @@ use std::{
     path::{Path, PathBuf, MAIN_SEPARATOR},
 };
 
-use crate::{builtin::BUILTIN_SHADERS, dirs::shader_dirs, shader::Shader, util::PathExt};
 use tracing::{debug, trace};
 use walkdir::WalkDir;
+
+use crate::{builtin::BUILTIN_SHADERS, dirs::shader_dirs, shader::Shader, util::PathExt};
 
 const MAX_DEPTH: usize = 10;
 

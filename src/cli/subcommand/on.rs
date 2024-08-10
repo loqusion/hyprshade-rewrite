@@ -1,5 +1,8 @@
 use std::process::ExitCode;
 
+use clap::Parser;
+use tracing::warn;
+
 use crate::{
     cli::{
         arg::{
@@ -12,8 +15,6 @@ use crate::{
     resolver::Resolver,
     template::MergeDeep,
 };
-use clap::Parser;
-use tracing::warn;
 
 /**
 Turn on a shader

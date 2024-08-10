@@ -1,5 +1,10 @@
 use std::process::ExitCode;
 
+use clap::Parser;
+use color_eyre::Section;
+use const_format::{concatcp, formatcp};
+use eyre::{Context, OptionExt};
+
 use crate::{
     cli::{
         arg::{
@@ -16,10 +21,6 @@ use crate::{
     template::MergeDeep,
     util::ConfigSection,
 };
-use clap::Parser;
-use color_eyre::Section;
-use const_format::{concatcp, formatcp};
-use eyre::{Context, OptionExt};
 
 const EXAMPLE_SECTION: &str = color_print::cstr!(
     r#"<bold><underline>Examples:</underline></bold>

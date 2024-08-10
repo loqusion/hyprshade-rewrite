@@ -1,8 +1,9 @@
 use std::process::ExitCode;
 
-use crate::{cli::CommandExecute, config::Config, shader::Shader};
 use clap::Parser;
 use tracing::warn;
+
+use crate::{cli::CommandExecute, config::Config, shader::Shader};
 
 /**
 Show the current shader

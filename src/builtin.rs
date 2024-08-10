@@ -2,8 +2,9 @@
 
 use std::io;
 
-use crate::template::{MergeDeep, TemplateData, TemplateDataMap};
 use phf::phf_map;
+
+use crate::template::{MergeDeep, TemplateData, TemplateDataMap};
 
 #[derive(Debug, Clone)]
 pub struct BuiltinShader {

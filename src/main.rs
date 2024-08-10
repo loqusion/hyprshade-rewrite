@@ -13,7 +13,8 @@ mod util;
 use std::process::ExitCode;
 
 use clap::Parser;
-use cli::{Cli, CommandExecute};
+
+use crate::cli::{Cli, CommandExecute};
 
 fn main() -> eyre::Result<ExitCode> {
     color_eyre::config::HookBuilder::default()

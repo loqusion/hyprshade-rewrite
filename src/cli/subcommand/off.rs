@@ -1,7 +1,8 @@
 use std::process::ExitCode;
 
-use crate::{cli::CommandExecute, config::Config, shader::Shader};
 use clap::Parser;
+
+use crate::{cli::CommandExecute, config::Config, shader::Shader};
 
 /**
 Turn off shader

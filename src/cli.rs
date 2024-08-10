@@ -7,12 +7,14 @@ mod subcommand;
 
 use std::{path::PathBuf, process::ExitCode};
 
-use self::{instrumentation::Instrumentation, subcommand::HyprshadeSubcommand};
+use clap::Parser;
+
 use crate::{
     config::{Config, ConfigReadError},
     constants::{HYPRLAND_CONFIG_DIR, HYPRSHADE_CONFIG_DIR, HYPRSHADE_CONFIG_FILE_ENV},
 };
-use clap::Parser;
+
+use self::{instrumentation::Instrumentation, subcommand::HyprshadeSubcommand};
 
 pub trait CommandExecute {
     fn execute(self, config: Option<&Config>) -> eyre::Result<ExitCode>;

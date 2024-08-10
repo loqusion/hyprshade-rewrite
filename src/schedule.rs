@@ -1,11 +1,12 @@
 use std::cmp::Ordering;
 
+use chrono::NaiveTime;
+
 use crate::{
     config::{Config, Shader as ShaderConfig},
     resolver::{self, Resolver},
     shader::Shader,
 };
-use chrono::NaiveTime;
 
 pub struct Schedule<'a> {
     table: ScheduleTable<'a, ShaderConfig>,

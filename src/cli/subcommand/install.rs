@@ -1,8 +1,9 @@
 use std::process::ExitCode;
 
-use crate::{cli::CommandExecute, config::Config};
 use clap::Parser;
 use color_eyre::eyre::eyre;
+
+use crate::{cli::CommandExecute, config::Config};
 
 /**
 TODO: write help text

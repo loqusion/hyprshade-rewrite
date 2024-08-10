@@ -3,9 +3,10 @@ use std::{
     fmt::{self, Display},
 };
 
-use crate::template::{MergeDeep, TemplateData, TemplateDataCliParseError, TemplateDataMap};
 use clap::builder::TypedValueParser;
 use clap::error::{ContextKind, ContextValue, ErrorKind};
+
+use crate::template::{MergeDeep, TemplateData, TemplateDataCliParseError, TemplateDataMap};
 
 const LHS_SEP: &str = ".";
 const ASSIGN: &str = "=";
