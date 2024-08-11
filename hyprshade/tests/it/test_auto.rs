@@ -15,7 +15,7 @@ fn fails_without_config() {
        0: [91mno configuration file found[0m
 
     Location:
-       [35msrc/cli/subcommand/auto.rs[0m:[35m36[0m
+       [35mhyprshade/src/cli/subcommand/auto.rs[0m:[35m36[0m
 
     [93mWarning[0m: A configuration file is required to call this command
     [96mSuggestion[0m: For more information, see https://github.com/loqusion/hyprshade#configuration
