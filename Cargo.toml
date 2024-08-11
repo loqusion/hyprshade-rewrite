@@ -1,8 +1,48 @@
-[workspace]
-members = ["hyprshade"]
-resolver = "1"
+[package]
+name = "hyprshade"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/loqusion/hyprshade"
+
+[features]
+default = ["compat"]
+compat = []
+
+[dependencies]
+chrono = "0.4.38"
+clap = { version = "4.5.11", features = ["cargo", "derive", "env", "error-context", "wrap_help"] }
+clap_derive = "4.5.11"
+color-eyre = "0.6.3"
+color-print = "0.3.6"
+const_format = "0.2.32"
+derive_more = "0.99.18"
+directories = "5.0.1"
+eyre = "0.6.12"
+lazy_static = "1.5.0"
+mustache = "0.9.0"
+phf = { version = "0.11.2", features = ["macros"] }
+serde = { version = "1.0.204", features = ["derive"] }
+serde_json = "1.0.121"
+thiserror = "1.0.63"
+toml = "0.8.17"
+toml-datetime-compat = { version = "0.3.0", features = ["chrono"] }
+tracing = "0.1.40"
+tracing-error = "0.2.0"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+walkdir = "2.5.0"
+
+[dev-dependencies]
+criterion = "0.5.1"
+insta = { version = "1.39.0", features = ["toml"] }
+insta-cmd = "0.6.0"
+tempfile = "3.10.1"
 
 [profile.release]
 opt-level = "z"
 strip = true
 lto = true
+
+[[bench]]
+name = "schedule"
+harness = false
