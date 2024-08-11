@@ -38,6 +38,9 @@ insta = { version = "1.39.0", features = ["toml"] }
 insta-cmd = "0.6.0"
 tempfile = "3.10.1"
 
+[workspace]
+members = ["xtask", "."]
+
 [profile.release]
 opt-level = "z"
 strip = true
