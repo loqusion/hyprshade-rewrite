@@ -1,7 +1,7 @@
 use crate::common::Space;
 
 #[test]
-#[ignore = "requires hyprshade"]
+#[ignore = "requires hyprland"]
 fn smoke() {
     let space = Space::new();
     insta_cmd::assert_cmd_snapshot!(space.hyprshade_cmd().arg("off"), @r###"
