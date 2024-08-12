@@ -11,6 +11,7 @@ use crate::{
     constants::{README_CONFIGURATION, README_SCHEDULING},
     schedule::Schedule,
     shader::Shader,
+    time::now,
     util::ConfigSection,
 };
 
@@ -31,7 +32,7 @@ pub struct Auto;
 impl CommandExecute for Auto {
     #[tracing::instrument(level = "debug", skip_all)]
     fn execute(self, config: Option<&Config>) -> eyre::Result<ExitCode> {
-        let now = chrono::Local::now();
+        let now = now();
         let config = config
             .ok_or_eyre("no configuration file found")
             .warning("A configuration file is required to call this command")

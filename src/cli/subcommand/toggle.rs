@@ -19,6 +19,7 @@ use crate::{
     schedule::Schedule,
     shader::Shader,
     template::MergeDeep,
+    time::now,
     util::ConfigSection,
 };
 
@@ -100,7 +101,7 @@ impl CommandExecute for Toggle {
             var_fallback,
         } = self;
 
-        let now = chrono::Local::now();
+        let now = now();
 
         // Eagerly evaluate --var and --var-fallback so that feedback is presented unconditionally
         let fallback_data = VarArg::merge_into_data(var_fallback, "var-fallback")?;

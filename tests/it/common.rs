@@ -34,6 +34,7 @@ pub struct Space {
     tempdir: TempDir,
     working_dir: PathBuf,
     home: PathBuf,
+    time: Option<String>,
 }
 
 impl Space {
@@ -46,7 +47,13 @@ impl Space {
             tempdir,
             working_dir,
             home,
+            time: None,
         }
+    }
+
+    pub fn with_time(&mut self, time: &str) -> &mut Self {
+        self.time = Some(time.to_string());
+        self
     }
 
     pub fn hyprshade_cmd(&self) -> Command {
@@ -58,6 +65,11 @@ impl Space {
         for (key, path) in DIRS {
             let path = self.home().join(path);
             cmd.env(key, path);
+        }
+        if let Some(time) = &self.time {
+            cmd.env("__HYPRSHADE_MOCK_TIME", time);
+        } else {
+            cmd.env_remove("__HYPRSHADE_MOCK_TIME");
         }
         cmd.current_dir(&self.working_dir);
         cmd

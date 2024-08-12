@@ -8,6 +8,7 @@ mod resolver;
 mod schedule;
 mod shader;
 mod template;
+mod time;
 mod util;
 
 use std::process::ExitCode;
