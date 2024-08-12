@@ -18,4 +18,4 @@ jobs:
           toolchain: stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo check
-      - run: cargo test
+      - run: cargo xtask test
