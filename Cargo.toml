@@ -35,7 +35,7 @@ walkdir = "2.5.0"
 
 [dev-dependencies]
 criterion = "0.5.1"
-insta = { version = "1.39.0", features = ["toml"] }
+insta = { version = "1.39.0", features = ["filters", "toml"] }
 insta-cmd = "0.6.0"
 proc_macros = { version = "0.1.0", path = "proc_macros" }
 tempfile = "3.10.1"
