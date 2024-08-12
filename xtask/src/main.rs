@@ -18,15 +18,16 @@ fn usage() {
 fn main() -> eyre::Result<ExitCode> {
     let shell = Shell::new()?;
 
-    match std::env::args().nth(1).as_deref() {
-        Some("test") => test::main(shell),
-        Some(invalid) => {
-            eprintln!("error: unrecognized subcommand '{invalid}'");
+    let args = std::env::args().collect::<Vec<_>>();
+    match &args[1..] {
+        [subcommand, args @ ..] if subcommand == "test" => test::main(shell, args),
+        [unrecognized_subcommand, ..] => {
+            eprintln!("error: unrecognized subcommand '{unrecognized_subcommand}'");
             eprintln!();
             usage();
             Ok(ExitCode::FAILURE)
         }
-        None => {
+        [] => {
             usage();
             Ok(ExitCode::FAILURE)
         }

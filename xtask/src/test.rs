@@ -29,10 +29,10 @@ impl Hook {
     }
 }
 
-pub fn main(shell: Shell) -> eyre::Result<ExitCode> {
+pub fn main(shell: Shell, args: &[String]) -> eyre::Result<ExitCode> {
     let hook = Hook::new();
 
-    let result = cmd!(shell, "cargo test").run();
+    let result = cmd!(shell, "cargo test -- {args...}").run();
 
     hook.after();
     result?;
