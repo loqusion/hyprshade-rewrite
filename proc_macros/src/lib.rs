@@ -12,6 +12,8 @@ lazy_static! {
     static ref IS_HYPRLAND_RUNNING: bool = env::var_os("HYPRLAND_INSTANCE_SIGNATURE").is_some();
 }
 
+/// Attribute macro declaring a test function that will be ignored if the test is not running in a
+/// Hyprland instance.
 #[proc_macro_attribute]
 pub fn hyprland_test(attr: TokenStream, item: TokenStream) -> TokenStream {
     let item = parse_macro_input!(item as ItemFn);
