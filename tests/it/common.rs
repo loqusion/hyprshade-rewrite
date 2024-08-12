@@ -14,6 +14,12 @@ const CONFIG_DIRS: &[&str] = &["hypr", "hyprshade"];
 pub const INSTA_FILTERS: &[(&str, &str)] = &[
     (r"/run/user/[[:digit:]]+/\S+?", "[RUNTIME_FILE]"),
     (
+        r"/.*?/hyprshade-test-dir/home/.config/hyprshade/config.toml",
+        "[HYPRSHADE_CONFIG]",
+    ),
+    (r"/.*?/hyprshade-test-dir/home", "[HYPRSHADE_HOME]"),
+    (r"/tmp/.tmp\S+", "[TEMP_FILE]"),
+    (
         r"(?:https?|ftp)://(?:[[:alnum:]_-]+\.)+[[:alpha:]]+(?:/[[:alnum:]_-]+)*(?:#[[:alnum:]_-]+)?(?:\?[[:alnum:]_-]*)?",
         "[URL]",
     ),
@@ -28,7 +34,7 @@ pub const INSTA_FILTERS: &[(&str, &str)] = &[
 ];
 
 fn bootstrap_home(path: &Path) -> PathBuf {
-    let home = path.join("home");
+    let home = path.join("hyprshade-test-dir/home");
     for (_, path) in DIRS {
         let path = home.join(path);
         fs::create_dir_all(path).unwrap();
