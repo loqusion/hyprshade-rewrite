@@ -1,13 +1,11 @@
 mod error {
-    use insta_cmd::assert_cmd_snapshot;
-
-    use crate::common::Space;
+    use crate::common::{hyprshade_cmd_snapshot, Space};
 
     #[test]
     fn fails_without_config() {
         let mut space = Space::new();
         space.with_time("02:00:00");
-        assert_cmd_snapshot!(space.hyprshade_cmd().arg("auto"), @r###"
+        hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("auto"), @r###"
         success: false
         exit_code: 1
         ----- stdout -----
@@ -17,13 +15,10 @@ mod error {
            0: [91mno configuration file found[0m
 
         Location:
-           [35msrc/cli/subcommand/auto.rs[0m:[35m37[0m
+           [LOCATION]
 
         [93mWarning[0m: A configuration file is required to call this command
-        [96mSuggestion[0m: For more information, see https://github.com/loqusion/hyprshade#configuration
-
-        Backtrace omitted. Run with RUST_BACKTRACE=1 environment variable to display it.
-        Run with RUST_BACKTRACE=full to include source snippets.
+        [96mSuggestion[0m: For more information, see [URL]
         "###);
     }
 }

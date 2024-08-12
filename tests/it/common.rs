@@ -11,6 +11,22 @@ use tempfile::TempDir;
 const DIRS: &[(&str, &str)] = &[("HOME", ""), ("XDG_CONFIG_HOME", ".config")];
 const CONFIG_DIRS: &[&str] = &["hypr", "hyprshade"];
 
+pub const INSTA_FILTERS: &[(&str, &str)] = &[
+    (r"/run/user/[[:digit:]]+/\S+?", "[RUNTIME_FILE]"),
+    (
+        r"(?:https?|ftp)://(?:[[:alnum:]_-]+\.)+[[:alpha:]]+(?:/[[:alnum:]_-]+)*(?:#[[:alnum:]_-]+)?(?:\?[[:alnum:]_-]*)?",
+        "[URL]",
+    ),
+    (
+        r"(Location:\s*)(?:\x1b\[\d+m)?.*?(?:\x1b\[\d+m)?:(?:\x1b\[\d+m)?\d+(?:\x1b\[\d+m)?(\s+)",
+        "$1[LOCATION]$2",
+    ),
+    (
+        r"\s?Backtrace omitted. Run with RUST_BACKTRACE=1 environment variable to display it.\s*Run with RUST_BACKTRACE=full to include source snippets.\s*",
+        "",
+    ),
+];
+
 fn bootstrap_home(path: &Path) -> PathBuf {
     let home = path.join("home");
     for (_, path) in DIRS {
@@ -83,3 +99,16 @@ impl Space {
         self.home.as_ref()
     }
 }
+
+macro_rules! hyprshade_cmd_snapshot {
+    ($cmd:expr, @$snapshot:literal) => {{
+        let mut settings = ::insta::Settings::clone_current();
+        for (matcher, replacement) in $crate::common::INSTA_FILTERS {
+            settings.add_filter(matcher, *replacement);
+        }
+        let _guard = settings.bind_to_scope();
+        ::insta_cmd::assert_cmd_snapshot!($cmd, @$snapshot);
+    }};
+}
+
+pub(crate) use hyprshade_cmd_snapshot;
