@@ -10,9 +10,10 @@ pub fn now() -> chrono::DateTime<chrono::Local> {
 
 #[cfg(feature = "mock-time")]
 fn mock_now() -> chrono::DateTime<chrono::Local> {
-    let time: chrono::NaiveTime = std::env::var("__HYPRSHADE_MOCK_TIME")
-        .unwrap()
+    let mock_time_str = std::env::var("__HYPRSHADE_MOCK_TIME")
+        .unwrap_or_else(|err| panic!("reading __HYPRSHADE_MOCK_TIME: {err}"));
+    let time: chrono::NaiveTime = mock_time_str
         .parse()
-        .unwrap();
+        .unwrap_or_else(|err| panic!("parsing '{mock_time_str}': {err}"));
     chrono::Local::now().with_time(time).unwrap()
 }
