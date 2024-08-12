@@ -78,6 +78,13 @@ impl Space {
         self
     }
 
+    pub fn with_config(&mut self, config: &str) -> &mut Self {
+        let config_path = self.home().join(".config/hyprshade/config.toml");
+        fs::write(&config_path, config)
+            .unwrap_or_else(|err| panic!("failed writing to {}: {}", config_path.display(), err));
+        self
+    }
+
     pub fn hyprshade_cmd(&self) -> Command {
         self.cmd(get_bin())
     }
