@@ -1,6 +1,6 @@
 use std::process::ExitCode;
 
-use hyprshade::Shader;
+use hyprshade::__private::Shader;
 use xshell::{cmd, Shell};
 
 struct Hook {
