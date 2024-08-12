@@ -104,6 +104,7 @@ impl Space {
         cmd
     }
 
+    #[allow(dead_code)]
     pub fn working_dir(&self) -> &Path {
         self.working_dir.as_ref()
     }
