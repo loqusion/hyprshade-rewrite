@@ -17,7 +17,7 @@ where
     E: Into<eyre::Report>,
 {
     fn config_section(self, path: &Path) -> Self::Return {
-        self.with_section(|| path.display().yellow().to_string().header("Configuration"))
+        self.with_section(|| path.display().yellow().to_string().header("Configuration:"))
     }
 }
 
