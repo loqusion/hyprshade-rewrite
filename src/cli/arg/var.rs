@@ -128,17 +128,26 @@ impl TypedValueParser for VarArgParser {
         }
 
         let ret = match value.split(ASSIGN).collect::<Vec<_>>()[..] {
+            ["", _] => {
+                return Err(invalid_arg(arg, value, &["empty KEY"]).with_cmd(cmd));
+            }
+            [_, ""] => {
+                return Err(invalid_arg(arg, value, &["empty VALUE"]).with_cmd(cmd));
+            }
             [lhs, rhs] => {
-                let rhs = if rhs.is_empty() {
-                    return Err(invalid_arg(arg, value, &["empty value"]).with_cmd(cmd));
-                } else {
-                    rhs.to_string()
-                };
+                let rhs = rhs.to_string();
                 let lhs: Vec<String> = lhs
                     .split(LHS_SEP)
-                    .map(|s| {
+                    .enumerate()
+                    .map(|(i, s)| {
                         if s.is_empty() {
-                            Err(invalid_arg(arg, value, &["empty key"]).with_cmd(cmd))
+                            let sep_count = lhs.matches(LHS_SEP).count();
+                            let suggestions: &[&str] = match i {
+                                0 => &["KEY must not begin with '.'"],
+                                _ if i == sep_count => &["KEY must not end with '.'"],
+                                _ => &["each word in KEY must be separated by exactly one '.'"],
+                            };
+                            Err(invalid_arg(arg, value, suggestions).with_cmd(cmd))
                         } else {
                             Ok(s.to_string())
                         }
@@ -148,6 +157,9 @@ impl TypedValueParser for VarArgParser {
             }
             [_, _, ..] => {
                 return Err(invalid_arg(arg, value, &["too many equals signs"]).with_cmd(cmd));
+            }
+            [""] => {
+                return Err(invalid_arg(arg, value, &["empty"]).with_cmd(cmd));
             }
             [_] => {
                 return Err(invalid_arg(arg, value, &["no equals sign"]).with_cmd(cmd));
