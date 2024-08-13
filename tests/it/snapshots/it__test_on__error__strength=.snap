@@ -1,0 +1,24 @@
+---
+source: tests/it/test_on.rs
+info:
+  program: hyprshade
+  args:
+    - "on"
+    - vibrance
+    - "--var"
+    - strength=
+  env:
+    HOME: /tmp/.tmpwmVFrT/hyprshade-test-dir/home/
+    XDG_CONFIG_HOME: /tmp/.tmpwmVFrT/hyprshade-test-dir/home/.config
+    __HYPRSHADE_MOCK_TIME: ""
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: invalid value 'strength=' for '--var <KEY=VALUE>'
+
+  tip: empty VALUE
+
+For more information, try '--help'.

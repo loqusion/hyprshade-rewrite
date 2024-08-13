@@ -1,0 +1,24 @@
+---
+source: tests/it/test_on.rs
+info:
+  program: hyprshade
+  args:
+    - "on"
+    - vibrance
+    - "--var"
+    - ""
+  env:
+    HOME: /tmp/.tmp7RHl2q/hyprshade-test-dir/home/
+    XDG_CONFIG_HOME: /tmp/.tmp7RHl2q/hyprshade-test-dir/home/.config
+    __HYPRSHADE_MOCK_TIME: ""
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: invalid value '' for '--var <KEY=VALUE>'
+
+  tip: empty
+
+For more information, try '--help'.

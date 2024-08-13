@@ -1,6 +1,7 @@
 mod common;
 mod test_auto;
 mod test_off;
+mod test_on;
 mod test_toggle;
 
 #[cfg(not(feature = "mock-time"))]

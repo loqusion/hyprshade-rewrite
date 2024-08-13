@@ -1,0 +1,24 @@
+---
+source: tests/it/test_on.rs
+info:
+  program: hyprshade
+  args:
+    - "on"
+    - vibrance
+    - "--var"
+    - ".balance.red=0.3"
+  env:
+    HOME: /tmp/.tmp66Xwut/hyprshade-test-dir/home/
+    XDG_CONFIG_HOME: /tmp/.tmp66Xwut/hyprshade-test-dir/home/.config
+    __HYPRSHADE_MOCK_TIME: ""
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: invalid value '.balance.red=0.3' for '--var <KEY=VALUE>'
+
+  tip: KEY must not begin with '.'
+
+For more information, try '--help'.

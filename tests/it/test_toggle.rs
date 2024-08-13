@@ -229,4 +229,28 @@ mod error {
         [96mSuggestion[0m: For more information, see [URL]
         "###);
     }
+
+    #[test]
+    #[ignore = "already tested in test_on::error::fails_merging_var"]
+    fn fails_merging_var() {
+        unimplemented!()
+    }
+
+    #[test]
+    #[ignore = "should be near-identical to fails_merging_var"]
+    fn fails_merging_fallback_var() {
+        unimplemented!()
+    }
+
+    #[test]
+    #[ignore = "already tested in test_on::error::fails_parsing_var"]
+    fn fails_parsing_var() {
+        unimplemented!()
+    }
+
+    #[test]
+    #[ignore = "should be near-identical to fails_parsing_var"]
+    fn fails_parsing_fallback_var() {
+        unimplemented!()
+    }
 }
