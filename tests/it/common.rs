@@ -152,14 +152,24 @@ impl CommandExt for Command {
 }
 
 macro_rules! hyprshade_cmd_snapshot {
-    ($cmd:expr, @$snapshot:literal) => {{
+    ($($arg:tt)*) => {{
         let mut settings = ::insta::Settings::clone_current();
         for (matcher, replacement) in $crate::common::INSTA_FILTERS {
             settings.add_filter(matcher, *replacement);
         }
         let _guard = settings.bind_to_scope();
-        ::insta_cmd::assert_cmd_snapshot!($cmd, @$snapshot);
+        $crate::_hyprshade_cmd_snapshot_base!($($arg)*);
     }};
+}
+
+#[macro_export]
+macro_rules! _hyprshade_cmd_snapshot_base {
+    ($cmd:expr, @$snapshot:literal) => {
+        ::insta_cmd::assert_cmd_snapshot!($cmd, @$snapshot);
+    };
+    ($name:expr, $cmd:expr) => {
+        ::insta_cmd::assert_cmd_snapshot!($name, $cmd);
+    };
 }
 
 pub(crate) use hyprshade_cmd_snapshot;
