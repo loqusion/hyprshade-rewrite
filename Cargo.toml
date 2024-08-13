@@ -48,6 +48,12 @@ opt-level = "z"
 strip = true
 lto = true
 
+[profile.dev.package.insta]
+opt-level = 3
+
+[profile.dev.package.similar]
+opt-level = 3
+
 [[bench]]
 name = "schedule"
 harness = false
