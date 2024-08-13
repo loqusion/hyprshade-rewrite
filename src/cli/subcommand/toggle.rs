@@ -149,12 +149,15 @@ impl CommandExecute for Toggle {
                     .and_then(|config| {
                         let scheduled_shader = Schedule::with_config(config).scheduled_shader(&now.time())
                             .wrap_err("resolving shader in config")
-                            .config_section(config.path())?;
+                            .config_section(config.path())
+                            .note("Tried to resolve scheduled shader because of --fallback-auto")
+                            .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")?;
                         if shader == scheduled_shader {
                             config.default_shader().map(|default_shader| Resolver::with_name(&default_shader.name).resolve())
                                 .transpose()
                                 .wrap_err("resolving default shader in config")
                                 .config_section(config.path())
+                                .note("Tried to resolve default shader because of --fallback-auto")
                                 .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
                         } else {
                             Ok(scheduled_shader)
