@@ -118,6 +118,39 @@ impl Space {
     }
 }
 
+pub trait CommandExt {
+    fn run(&mut self);
+}
+
+impl CommandExt for Command {
+    fn run(&mut self) {
+        let output = self
+            .output()
+            .unwrap_or_else(|err| panic!("failed running {:?}: {}", self, err));
+
+        if output.status.code() != Some(0) {
+            let command = format!("{:?}", self);
+            let code = output
+                .status
+                .code()
+                .map(|c| c.to_string())
+                .unwrap_or("none".to_string());
+            let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+            let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+            panic!(
+                "\
+                failed running {command}
+                exit_code: {code}\n\
+                ---- stdout ----\n\
+                {stdout}\n\
+                ---- stderr ----\n\
+                {stderr}
+                "
+            );
+        }
+    }
+}
+
 macro_rules! hyprshade_cmd_snapshot {
     ($cmd:expr, @$snapshot:literal) => {{
         let mut settings = ::insta::Settings::clone_current();
