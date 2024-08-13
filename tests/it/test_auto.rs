@@ -4,7 +4,7 @@ mod error {
     #[test]
     fn fails_without_config() {
         let mut space = Space::new();
-        space.with_time("02:00:00");
+        space.with_any_time();
         hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("auto"), @r###"
         success: false
         exit_code: 1
@@ -25,7 +25,7 @@ mod error {
     #[test]
     fn fails_resolving_shader() {
         let mut space = Space::new();
-        space.with_time("02:00:00").with_config(
+        space.with_any_time().with_config(
             r#"
             [[shader]]
             name = "invalid"

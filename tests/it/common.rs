@@ -78,6 +78,10 @@ impl Space {
         self
     }
 
+    pub fn with_any_time(&mut self) -> &mut Self {
+        self.with_time("00:00:00")
+    }
+
     pub fn with_config(&mut self, config: &str) -> &mut Self {
         let config_path = self.home().join(".config/hyprshade/config.toml");
         fs::write(&config_path, config)
