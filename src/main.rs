@@ -28,7 +28,15 @@ fn main() -> eyre::Result<ExitCode> {
 
     let config = cli.config()?;
 
-    cli.execute(config.as_ref())
+    match cli.execute(config.as_ref()) {
+        Ok(exit_code) => Ok(exit_code),
+        Err(err) => match err.downcast_ref::<clap::Error>() {
+            None => Err(err),
+            Some(clap_err) => {
+                clap_err.exit();
+            }
+        },
+    }
 }
 
 #[cfg(not(target_os = "linux"))]
