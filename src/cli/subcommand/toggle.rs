@@ -9,7 +9,7 @@ use crate::{
     cli::{
         arg::{
             help::{SHADER_HELP, SHADER_HELP_LONG as SHADER_HELP_LONG_SOURCE},
-            var::{VarArg, VarArgParser},
+            var::{MergeVarArg, VarArg, VarArgParser},
         },
         CommandExecute,
     },
@@ -89,6 +89,8 @@ pub struct Toggle {
     var_fallback: Vec<VarArg>,
 }
 
+impl MergeVarArg for Toggle {}
+
 impl CommandExecute for Toggle {
     #[tracing::instrument(level = "debug", skip_all)]
     fn execute(self, config: Option<&Config>) -> eyre::Result<ExitCode> {
@@ -104,8 +106,8 @@ impl CommandExecute for Toggle {
         let now = now();
 
         // Eagerly evaluate --var and --var-fallback so that feedback is presented unconditionally
-        let fallback_data = VarArg::merge_into_data(var_fallback, "var-fallback")?;
-        let shader_data = VarArg::merge_into_data(var, "var")?;
+        let fallback_data = Self::merge_var_into_data(var_fallback, "var-fallback")?;
+        let shader_data = Self::merge_var_into_data(var, "var")?;
 
         let shader = match &shader {
             Some(shader) => Some(Resolver::with_cli_arg(shader).resolve()?),

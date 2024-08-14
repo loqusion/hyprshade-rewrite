@@ -7,7 +7,7 @@ use crate::{
     cli::{
         arg::{
             help::{SHADER_HELP, SHADER_HELP_LONG},
-            var::{VarArg, VarArgParser},
+            var::{MergeVarArg, VarArg, VarArgParser},
         },
         CommandExecute,
     },
@@ -29,12 +29,14 @@ pub struct On {
     var: Vec<VarArg>,
 }
 
+impl MergeVarArg for On {}
+
 impl CommandExecute for On {
     #[tracing::instrument(level = "debug", skip_all)]
     fn execute(self, config: Option<&Config>) -> eyre::Result<ExitCode> {
         let On { shader, var } = self;
 
-        let data = VarArg::merge_into_data(var, "var")?;
+        let data = Self::merge_var_into_data(var, "var")?;
         let shader = Resolver::with_cli_arg(&shader).resolve()?;
 
         let mut data = data;

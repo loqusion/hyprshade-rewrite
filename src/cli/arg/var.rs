@@ -1,45 +1,59 @@
 use std::{
     collections::HashMap,
+    error::Error,
     fmt::{self, Display},
 };
 
-use clap::builder::TypedValueParser;
 use clap::error::{ContextKind, ContextValue, ErrorKind};
+use clap::{builder::TypedValueParser, CommandFactory};
+use color_eyre::owo_colors::OwoColorize;
 
-use crate::template::{MergeDeep, TemplateData, TemplateDataCliParseError, TemplateDataMap};
+use crate::template::{MergeDeep, TemplateData, TemplateDataMap};
 
 const LHS_SEP: &str = ".";
 const ASSIGN: &str = "=";
 
 #[derive(Debug, Clone)]
 pub struct VarArg {
-    lhs: Vec<String>,
+    lhs: Lhs,
     rhs: String,
 }
 
-impl VarArg {
-    pub fn merge_into_data(
+#[derive(Debug, Clone)]
+struct Lhs(Vec<String>);
+
+pub trait MergeVarArg: CommandFactory {
+    fn merge_var_into_data(
         vars: Vec<VarArg>,
         arg_name: &str,
-    ) -> Result<TemplateDataMap, VarArgMergeError> {
-        VarArg::check_no_conflicts(&vars, arg_name)?;
+    ) -> Result<TemplateDataMap, clap::Error> {
+        check_no_conflicts::<Self>(&vars, arg_name)?;
 
         let map = vars
             .into_iter()
             .try_fold(TemplateDataMap::new(), |mut map, arg| {
                 let data = match TemplateData::from_cli_arg(&arg.rhs) {
                     Ok(data) => data,
-                    Err(source) => {
-                        return Err(VarArgMergeError::Parse {
-                            arg,
-                            arg_name: arg_name.to_owned(),
-                            source,
-                        })
+                    Err(err) => {
+                        let mut messages = Vec::from([err.to_string()]);
+                        let mut err: &dyn Error = &err;
+                        while let Some(source) = err.source() {
+                            messages.push(source.to_string());
+                            err = source;
+                        }
+
+                        return Err(clap_error::value_validation(
+                            &Self::command(),
+                            arg_name,
+                            &arg.to_string(),
+                            &messages.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
+                        ));
                     }
                 };
                 let VarArg { mut lhs, .. } = arg;
-                let last = lhs.pop().expect("lhs is non-empty");
+                let last = lhs.0.pop().expect("lhs should be non-empty");
                 let data = lhs
+                    .0
                     .into_iter()
                     .rev()
                     .fold(TemplateDataMap::from([(last, data)]), |map, key| {
@@ -52,38 +66,53 @@ impl VarArg {
             })?;
         Ok(map)
     }
+}
 
-    fn check_no_conflicts(vars: &[VarArg], arg_name: &str) -> Result<(), VarArgMergeError> {
-        vars.iter().try_fold(
-            HashMap::new(),
-            |mut map: HashMap<&[_], (&VarArg, bool)>, arg| -> Result<_, VarArgMergeError> {
-                for i in 1..=arg.lhs.len() {
-                    let is_leaf = i == arg.lhs.len();
-                    let prefix = &arg.lhs[..i];
+fn check_no_conflicts<C: CommandFactory>(
+    vars: &[VarArg],
+    arg_name: &str,
+) -> Result<(), clap::Error> {
+    vars.iter().try_fold(
+        HashMap::new(),
+        |mut map: HashMap<&[_], (&VarArg, bool)>, arg| {
+            for i in 1..=arg.lhs.0.len() {
+                let is_leaf = i == arg.lhs.0.len();
+                let prefix = &arg.lhs.0[..i];
 
-                    match map.get(prefix) {
-                        Some(&(prior, is_leaf_prior)) if is_leaf_prior || is_leaf => {
-                            return Err(VarArgMergeError::Conflict {
-                                prior: prior.clone(),
-                                conflicting: arg.clone(),
-                                arg_name: arg_name.to_owned(),
-                            });
-                        }
-                        _ => (),
+                match map.get(prefix) {
+                    Some(&(prior, is_leaf_prior)) if is_leaf_prior || is_leaf => {
+                        return Err(clap_error::argument_conflict(
+                            &C::command(),
+                            arg_name,
+                            arg,
+                            prior,
+                            &[&format!(
+                                "'{}' would override '{}'",
+                                format_args!("--{arg_name} {arg}").yellow(),
+                                format_args!("--{arg_name} {prior}").yellow(),
+                            )],
+                        ));
                     }
-
-                    map.insert(prefix, (arg, is_leaf));
+                    _ => (),
                 }
-                Ok(map)
-            },
-        )?;
-        Ok(())
-    }
+
+                map.insert(prefix, (arg, is_leaf));
+            }
+            Ok(map)
+        },
+    )?;
+    Ok(())
 }
 
 impl Display for VarArg {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}{}{}", &self.lhs.join(LHS_SEP), ASSIGN, &self.rhs)
+        write!(f, "{}{}{}", &self.lhs, ASSIGN, &self.rhs)
+    }
+}
+
+impl Display for Lhs {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", &self.0.join(LHS_SEP))
     }
 }
 
@@ -153,7 +182,7 @@ impl TypedValueParser for VarArgParser {
                         }
                     })
                     .collect::<Result<_, _>>()?;
-                VarArg { lhs, rhs }
+                VarArg { lhs: Lhs(lhs), rhs }
             }
             [_, _, ..] => {
                 return Err(invalid_arg(arg, value, &["too many equals signs"]).with_cmd(cmd));
@@ -173,21 +202,61 @@ impl TypedValueParser for VarArgParser {
     }
 }
 
-#[derive(Debug, thiserror::Error)]
-#[non_exhaustive]
-pub enum VarArgMergeError {
-    #[error("--{arg_name}: '{conflicting}' conflicts with '{prior}'")]
-    Conflict {
-        prior: VarArg,
-        conflicting: VarArg,
-        arg_name: String,
-    },
-    #[error("in '--{arg_name} {arg}'")]
-    Parse {
-        arg: VarArg,
-        arg_name: String,
-        source: TemplateDataCliParseError,
-    },
+mod clap_error {
+    use clap::error::{ContextKind, ContextValue, ErrorKind};
+
+    use super::VarArg;
+
+    type Error = clap::Error;
+
+    pub(super) fn argument_conflict(
+        cmd: &clap::Command,
+        arg_name: &str,
+        arg: &VarArg,
+        other: &VarArg,
+        suggested: &[&str],
+    ) -> Error {
+        let mut err = Error::new(ErrorKind::ArgumentConflict).with_cmd(cmd);
+
+        err.insert(
+            ContextKind::InvalidArg,
+            ContextValue::String(format!("--{arg_name} {arg}")),
+        );
+        err.insert(
+            ContextKind::PriorArg,
+            ContextValue::String(format!("--{arg_name} {other}")),
+        );
+        if !suggested.is_empty() {
+            let suggested = suggested.iter().map(|s| s.to_string().into()).collect();
+            err.insert(ContextKind::Suggested, ContextValue::StyledStrs(suggested));
+        }
+
+        err
+    }
+
+    pub(super) fn value_validation(
+        cmd: &clap::Command,
+        arg_name: &str,
+        val: &str,
+        suggested: &[&str],
+    ) -> Error {
+        let mut err = Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
+
+        err.insert(
+            ContextKind::InvalidArg,
+            ContextValue::String(format!("--{arg_name}")),
+        );
+        err.insert(
+            ContextKind::InvalidValue,
+            ContextValue::String(val.to_string()),
+        );
+        if !suggested.is_empty() {
+            let suggested = suggested.iter().map(|s| s.to_string().into()).collect();
+            err.insert(ContextKind::Suggested, ContextValue::StyledStrs(suggested));
+        }
+
+        err
+    }
 }
 
 #[cfg(test)]
@@ -195,15 +264,25 @@ mod tests {
     use super::*;
 
     fn check(var_strs: &[&'_ str], is_valid: bool) {
-        let cmd = clap::Command::new("test")
-            .arg(
-                clap::Arg::new("var")
-                    .long("var")
-                    .value_name("KEY=VALUE")
-                    .action(clap::ArgAction::Append)
-                    .value_parser(VarArgParser),
-            )
-            .no_binary_name(true);
+        struct CommandFactoryImpl;
+
+        impl CommandFactory for CommandFactoryImpl {
+            fn command() -> clap::Command {
+                clap::Command::new("test")
+                    .arg(
+                        clap::Arg::new("var")
+                            .long("var")
+                            .value_name("KEY=VALUE")
+                            .action(clap::ArgAction::Append)
+                            .value_parser(VarArgParser),
+                    )
+                    .no_binary_name(true)
+            }
+
+            fn command_for_update() -> clap::Command {
+                Self::command()
+            }
+        }
 
         let args = {
             let mut args = Vec::with_capacity(2 * var_strs.len());
@@ -214,7 +293,7 @@ mod tests {
             args
         };
 
-        let vars: Vec<VarArg> = cmd
+        let vars: Vec<VarArg> = CommandFactoryImpl::command()
             .get_matches_from(args)
             .get_occurrences("var")
             .unwrap()
@@ -225,7 +304,7 @@ mod tests {
             })
             .collect();
 
-        let err = VarArg::check_no_conflicts(&vars, "var");
+        let err = check_no_conflicts::<CommandFactoryImpl>(&vars, "var");
         if is_valid {
             assert!(err.is_ok(), "Error: {}", err.unwrap_err());
         } else {

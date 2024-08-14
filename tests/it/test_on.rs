@@ -12,15 +12,15 @@ mod error {
             "strength=0.6",
         ]), @r###"
         success: false
-        exit_code: 1
+        exit_code: 2
         ----- stdout -----
 
         ----- stderr -----
-        Error: 
-           0: [91m--var: 'strength=0.6' conflicts with 'strength=0.5'[0m
+        error: the argument '--var strength=0.6' cannot be used with '--var strength=0.5'
 
-        Location:
-           [LOCATION]
+          tip: '--var strength=0.6' would override '--var strength=0.5'
+
+        For more information, try '--help'.
         "###);
     }
 
