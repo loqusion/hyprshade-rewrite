@@ -22,88 +22,6 @@ pub struct VarArg {
 #[derive(Debug, Clone)]
 struct Lhs(Vec<String>);
 
-pub trait MergeVarArg: CommandFactory {
-    fn merge_var_into_data(
-        vars: Vec<VarArg>,
-        arg_name: &str,
-    ) -> Result<TemplateDataMap, clap::Error> {
-        check_no_conflicts::<Self>(&vars, arg_name)?;
-
-        let map = vars
-            .into_iter()
-            .try_fold(TemplateDataMap::new(), |mut map, arg| {
-                let data = match TemplateData::from_cli_arg(&arg.rhs) {
-                    Ok(data) => data,
-                    Err(err) => {
-                        let mut messages = Vec::from([err.to_string()]);
-                        let mut err: &dyn Error = &err;
-                        while let Some(source) = err.source() {
-                            messages.push(source.to_string());
-                            err = source;
-                        }
-
-                        return Err(clap_error::value_validation(
-                            &Self::command(),
-                            arg_name,
-                            &arg.to_string(),
-                            &messages.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
-                        ));
-                    }
-                };
-                let VarArg { mut lhs, .. } = arg;
-                let last = lhs.0.pop().expect("lhs should be non-empty");
-                let data = lhs
-                    .0
-                    .into_iter()
-                    .rev()
-                    .fold(TemplateDataMap::from([(last, data)]), |map, key| {
-                        TemplateDataMap::from([(key, TemplateData::from(map))])
-                    });
-
-                map.merge_deep_force(data);
-
-                Ok(map)
-            })?;
-        Ok(map)
-    }
-}
-
-fn check_no_conflicts<C: CommandFactory>(
-    vars: &[VarArg],
-    arg_name: &str,
-) -> Result<(), clap::Error> {
-    vars.iter().try_fold(
-        HashMap::new(),
-        |mut map: HashMap<&[_], (&VarArg, bool)>, arg| {
-            for i in 1..=arg.lhs.0.len() {
-                let is_leaf = i == arg.lhs.0.len();
-                let prefix = &arg.lhs.0[..i];
-
-                match map.get(prefix) {
-                    Some(&(prior, is_leaf_prior)) if is_leaf_prior || is_leaf => {
-                        return Err(clap_error::argument_conflict(
-                            &C::command(),
-                            arg_name,
-                            arg,
-                            prior,
-                            &[&format!(
-                                "'{}' would override '{}'",
-                                format_args!("--{arg_name} {arg}").yellow(),
-                                format_args!("--{arg_name} {prior}").yellow(),
-                            )],
-                        ));
-                    }
-                    _ => (),
-                }
-
-                map.insert(prefix, (arg, is_leaf));
-            }
-            Ok(map)
-        },
-    )?;
-    Ok(())
-}
-
 impl Display for VarArg {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}{}{}", &self.lhs, ASSIGN, &self.rhs)
@@ -200,6 +118,88 @@ impl TypedValueParser for VarArgParser {
 
         Ok(ret)
     }
+}
+
+pub trait MergeVarArg: CommandFactory {
+    fn merge_var_into_data(
+        vars: Vec<VarArg>,
+        arg_name: &str,
+    ) -> Result<TemplateDataMap, clap::Error> {
+        check_no_conflicts::<Self>(&vars, arg_name)?;
+
+        let map = vars
+            .into_iter()
+            .try_fold(TemplateDataMap::new(), |mut map, arg| {
+                let data = match TemplateData::from_cli_arg(&arg.rhs) {
+                    Ok(data) => data,
+                    Err(err) => {
+                        let mut messages = Vec::from([err.to_string()]);
+                        let mut err: &dyn Error = &err;
+                        while let Some(source) = err.source() {
+                            messages.push(source.to_string());
+                            err = source;
+                        }
+
+                        return Err(clap_error::value_validation(
+                            &Self::command(),
+                            arg_name,
+                            &arg.to_string(),
+                            &messages.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
+                        ));
+                    }
+                };
+                let VarArg { mut lhs, .. } = arg;
+                let last = lhs.0.pop().expect("lhs should be non-empty");
+                let data = lhs
+                    .0
+                    .into_iter()
+                    .rev()
+                    .fold(TemplateDataMap::from([(last, data)]), |map, key| {
+                        TemplateDataMap::from([(key, TemplateData::from(map))])
+                    });
+
+                map.merge_deep_force(data);
+
+                Ok(map)
+            })?;
+        Ok(map)
+    }
+}
+
+fn check_no_conflicts<C: CommandFactory>(
+    vars: &[VarArg],
+    arg_name: &str,
+) -> Result<(), clap::Error> {
+    vars.iter().try_fold(
+        HashMap::new(),
+        |mut map: HashMap<&[_], (&VarArg, bool)>, arg| {
+            for i in 1..=arg.lhs.0.len() {
+                let is_leaf = i == arg.lhs.0.len();
+                let prefix = &arg.lhs.0[..i];
+
+                match map.get(prefix) {
+                    Some(&(prior, is_leaf_prior)) if is_leaf_prior || is_leaf => {
+                        return Err(clap_error::argument_conflict(
+                            &C::command(),
+                            arg_name,
+                            arg,
+                            prior,
+                            &[&format!(
+                                "'{}' would override '{}'",
+                                format_args!("--{arg_name} {arg}").yellow(),
+                                format_args!("--{arg_name} {prior}").yellow(),
+                            )],
+                        ));
+                    }
+                    _ => (),
+                }
+
+                map.insert(prefix, (arg, is_leaf));
+            }
+            Ok(map)
+        },
+    )?;
+    Ok(())
 }
 
 mod clap_error {
