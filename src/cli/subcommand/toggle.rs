@@ -106,8 +106,8 @@ impl CommandExecute for Toggle {
         let now = now();
 
         // Eagerly evaluate --var and --var-fallback so that feedback is presented unconditionally
-        let fallback_data = Self::merge_var_into_data(var_fallback, "var-fallback")?;
-        let shader_data = Self::merge_var_into_data(var, "var")?;
+        let fallback_data = Self::merge_into_data(var_fallback, "var-fallback")?;
+        let shader_data = Self::merge_into_data(var, "var")?;
 
         let shader = match &shader {
             Some(shader) => Some(Resolver::with_cli_arg(shader).resolve()?),

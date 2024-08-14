@@ -135,10 +135,7 @@ impl TypedValueParser for VarArgParser {
 }
 
 pub trait MergeVarArg: CommandFactory {
-    fn merge_var_into_data(
-        vars: Vec<VarArg>,
-        arg_name: &str,
-    ) -> Result<TemplateDataMap, clap::Error> {
+    fn merge_into_data(vars: Vec<VarArg>, arg_name: &str) -> Result<TemplateDataMap, clap::Error> {
         check_no_conflicts::<Self>(&vars, arg_name)?;
 
         let map = vars

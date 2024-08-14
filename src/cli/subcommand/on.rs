@@ -36,7 +36,7 @@ impl CommandExecute for On {
     fn execute(self, config: Option<&Config>) -> eyre::Result<ExitCode> {
         let On { shader, var } = self;
 
-        let data = Self::merge_var_into_data(var, "var")?;
+        let data = Self::merge_into_data(var, "var")?;
         let shader = Resolver::with_cli_arg(&shader).resolve()?;
 
         let mut data = data;
