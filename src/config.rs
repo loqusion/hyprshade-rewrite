@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::template::TemplateDataMap;
 
+#[derive(Debug, Clone)]
 pub struct Config {
     config: ConfigDocument,
     path: PathBuf,
