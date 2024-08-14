@@ -142,8 +142,8 @@ pub trait MergeVarArg: CommandFactory {
 
                         return Err(clap_error::value_validation(
                             &Self::command(),
-                            arg_name,
-                            &arg.to_string(),
+                            format!("--{arg_name}"),
+                            arg.to_string(),
                             &messages,
                         ));
                     }
@@ -181,9 +181,8 @@ fn check_no_conflicts<C: CommandFactory>(
                     Some(&(prior, is_leaf_prior)) if is_leaf_prior || is_leaf => {
                         return Err(clap_error::argument_conflict(
                             &C::command(),
-                            arg_name,
-                            arg,
-                            prior,
+                            format!("--{arg_name} {arg}"),
+                            format!("--{arg_name} {prior}"),
                             &[format!(
                                 "'{}' would override '{}'",
                                 format_args!("--{arg_name} {arg}").yellow(),
@@ -205,27 +204,18 @@ fn check_no_conflicts<C: CommandFactory>(
 mod clap_error {
     use clap::error::{ContextKind, ContextValue, ErrorKind};
 
-    use super::VarArg;
-
     type Error = clap::Error;
 
     pub(super) fn argument_conflict(
         cmd: &clap::Command,
-        arg_name: &str,
-        arg: &VarArg,
-        other: &VarArg,
+        arg: String,
+        other: String,
         suggested: &[String],
     ) -> Error {
         let mut err = Error::new(ErrorKind::ArgumentConflict).with_cmd(cmd);
 
-        err.insert(
-            ContextKind::InvalidArg,
-            ContextValue::String(format!("--{arg_name} {arg}")),
-        );
-        err.insert(
-            ContextKind::PriorArg,
-            ContextValue::String(format!("--{arg_name} {other}")),
-        );
+        err.insert(ContextKind::InvalidArg, ContextValue::String(arg));
+        err.insert(ContextKind::PriorArg, ContextValue::String(other));
         if !suggested.is_empty() {
             let suggested = suggested.iter().map(|s| s.into()).collect();
             err.insert(ContextKind::Suggested, ContextValue::StyledStrs(suggested));
@@ -236,20 +226,14 @@ mod clap_error {
 
     pub(super) fn value_validation(
         cmd: &clap::Command,
-        arg_name: &str,
-        val: &str,
+        arg: String,
+        val: String,
         suggested: &[String],
     ) -> Error {
         let mut err = Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
 
-        err.insert(
-            ContextKind::InvalidArg,
-            ContextValue::String(format!("--{arg_name}")),
-        );
-        err.insert(
-            ContextKind::InvalidValue,
-            ContextValue::String(val.to_string()),
-        );
+        err.insert(ContextKind::InvalidArg, ContextValue::String(arg));
+        err.insert(ContextKind::InvalidValue, ContextValue::String(val));
         if !suggested.is_empty() {
             let suggested = suggested.iter().map(|s| s.into()).collect();
             err.insert(ContextKind::Suggested, ContextValue::StyledStrs(suggested));
