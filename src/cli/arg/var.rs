@@ -4,7 +4,6 @@ use std::{
     fmt::{self, Display},
 };
 
-use clap::error::{ContextKind, ContextValue, ErrorKind};
 use clap::{builder::TypedValueParser, CommandFactory};
 use color_eyre::owo_colors::OwoColorize;
 
@@ -49,70 +48,85 @@ impl TypedValueParser for VarArgParser {
         let value = match value.to_str() {
             Some(value) => value,
             None => {
-                return Err(clap::Error::new(ErrorKind::InvalidUtf8).with_cmd(cmd));
+                return Err(clap_error::invalid_utf8(cmd));
             }
         };
 
-        fn invalid_arg(arg: Option<&clap::Arg>, value: &str, suggested: &[&str]) -> clap::Error {
-            let mut err = clap::Error::new(ErrorKind::ValueValidation);
-            err.insert(
-                ContextKind::InvalidArg,
-                ContextValue::String(arg.unwrap().to_string()),
-            );
-            err.insert(
-                ContextKind::InvalidValue,
-                ContextValue::String(value.to_string()),
-            );
-            if !suggested.is_empty() {
-                err.insert(
-                    ContextKind::Suggested,
-                    ContextValue::StyledStrs(
-                        suggested.iter().map(|s| s.to_string().into()).collect(),
-                    ),
-                );
-            }
-            err
-        }
-
         let ret = match value.split(ASSIGN).collect::<Vec<_>>()[..] {
             ["", _] => {
-                return Err(invalid_arg(arg, value, &["empty KEY"]).with_cmd(cmd));
+                return Err(clap_error::value_validation(
+                    cmd,
+                    arg.unwrap().to_string(),
+                    value.to_string(),
+                    &["empty KEY".into()],
+                ));
             }
             [_, ""] => {
-                return Err(invalid_arg(arg, value, &["empty VALUE"]).with_cmd(cmd));
+                return Err(clap_error::value_validation(
+                    cmd,
+                    arg.unwrap().to_string(),
+                    value.to_string(),
+                    &["empty VALUE".into()],
+                ));
             }
             [lhs, rhs] => {
                 let rhs = rhs.to_string();
-                let lhs: Vec<String> = lhs
-                    .split(LHS_SEP)
-                    .enumerate()
-                    .map(|(i, s)| {
-                        if s.is_empty() {
-                            let sep_count = lhs.matches(LHS_SEP).count();
-                            let suggestions: &[&str] = match i {
-                                0 => &["KEY must not begin with '.'"],
-                                _ if i == sep_count => &["KEY must not end with '.'"],
-                                _ => &["each word in KEY must be separated by exactly one '.'"],
-                            };
-                            Err(invalid_arg(arg, value, suggestions).with_cmd(cmd))
-                        } else {
-                            Ok(s.to_string())
-                        }
-                    })
-                    .collect::<Result<_, _>>()?;
+                let lhs: Vec<String> =
+                    lhs.split(LHS_SEP)
+                        .enumerate()
+                        .map(|(i, s)| {
+                            if s.is_empty() {
+                                let sep_count = lhs.matches(LHS_SEP).count();
+                                let suggestions: &[String] = match i {
+                                    0 => &["KEY must not begin with '.'".into()],
+                                    _ if i == sep_count => &["KEY must not end with '.'".into()],
+                                    _ => &["each word in KEY must be separated by exactly one '.'"
+                                        .into()],
+                                };
+                                Err(clap_error::value_validation(
+                                    cmd,
+                                    arg.unwrap().to_string(),
+                                    value.to_string(),
+                                    suggestions,
+                                ))
+                            } else {
+                                Ok(s.to_string())
+                            }
+                        })
+                        .collect::<Result<_, _>>()?;
                 VarArg { lhs: Lhs(lhs), rhs }
             }
             [_, _, ..] => {
-                return Err(invalid_arg(arg, value, &["too many equals signs"]).with_cmd(cmd));
+                return Err(clap_error::value_validation(
+                    cmd,
+                    arg.unwrap().to_string(),
+                    value.to_string(),
+                    &["too many equals signs".into()],
+                ));
             }
             [""] => {
-                return Err(invalid_arg(arg, value, &["empty"]).with_cmd(cmd));
+                return Err(clap_error::value_validation(
+                    cmd,
+                    arg.unwrap().to_string(),
+                    value.to_string(),
+                    &["empty".into()],
+                ));
             }
             [_] => {
-                return Err(invalid_arg(arg, value, &["no equals sign"]).with_cmd(cmd));
+                return Err(clap_error::value_validation(
+                    cmd,
+                    arg.unwrap().to_string(),
+                    value.to_string(),
+                    &["no equals sign".into()],
+                ));
             }
             [] => {
-                return Err(invalid_arg(arg, value, &["no content"]).with_cmd(cmd));
+                return Err(clap_error::value_validation(
+                    cmd,
+                    arg.unwrap().to_string(),
+                    value.to_string(),
+                    &["no content".into()],
+                ));
             }
         };
 
@@ -205,6 +219,10 @@ mod clap_error {
     use clap::error::{ContextKind, ContextValue, ErrorKind};
 
     type Error = clap::Error;
+
+    pub(super) fn invalid_utf8(cmd: &clap::Command) -> Error {
+        Error::new(ErrorKind::InvalidUtf8).with_cmd(cmd)
+    }
 
     pub(super) fn argument_conflict(
         cmd: &clap::Command,
