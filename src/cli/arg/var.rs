@@ -144,7 +144,7 @@ pub trait MergeVarArg: CommandFactory {
                             &Self::command(),
                             arg_name,
                             &arg.to_string(),
-                            &messages.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
+                            &messages,
                         ));
                     }
                 };
@@ -184,7 +184,7 @@ fn check_no_conflicts<C: CommandFactory>(
                             arg_name,
                             arg,
                             prior,
-                            &[&format!(
+                            &[format!(
                                 "'{}' would override '{}'",
                                 format_args!("--{arg_name} {arg}").yellow(),
                                 format_args!("--{arg_name} {prior}").yellow(),
@@ -214,7 +214,7 @@ mod clap_error {
         arg_name: &str,
         arg: &VarArg,
         other: &VarArg,
-        suggested: &[&str],
+        suggested: &[String],
     ) -> Error {
         let mut err = Error::new(ErrorKind::ArgumentConflict).with_cmd(cmd);
 
@@ -227,7 +227,7 @@ mod clap_error {
             ContextValue::String(format!("--{arg_name} {other}")),
         );
         if !suggested.is_empty() {
-            let suggested = suggested.iter().map(|s| s.to_string().into()).collect();
+            let suggested = suggested.iter().map(|s| s.into()).collect();
             err.insert(ContextKind::Suggested, ContextValue::StyledStrs(suggested));
         }
 
@@ -238,7 +238,7 @@ mod clap_error {
         cmd: &clap::Command,
         arg_name: &str,
         val: &str,
-        suggested: &[&str],
+        suggested: &[String],
     ) -> Error {
         let mut err = Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
 
@@ -251,7 +251,7 @@ mod clap_error {
             ContextValue::String(val.to_string()),
         );
         if !suggested.is_empty() {
-            let suggested = suggested.iter().map(|s| s.to_string().into()).collect();
+            let suggested = suggested.iter().map(|s| s.into()).collect();
             err.insert(ContextKind::Suggested, ContextValue::StyledStrs(suggested));
         }
 
