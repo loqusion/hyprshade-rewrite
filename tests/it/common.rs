@@ -134,9 +134,9 @@ impl CommandExt for Command {
                 .status
                 .code()
                 .map(|c| c.to_string())
-                .unwrap_or("none".to_string());
-            let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
-            let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+                .unwrap_or_else(|| "none".to_string());
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
             panic!(
                 "\
                 failed running {command}
