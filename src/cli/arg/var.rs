@@ -52,22 +52,21 @@ impl TypedValueParser for VarArgParser {
             }
         };
 
+        let value_validation = |suggested: &[String]| {
+            clap_error::value_validation(
+                cmd,
+                arg.unwrap().to_string(),
+                value.to_string(),
+                suggested,
+            )
+        };
+
         let ret = match value.split(ASSIGN).collect::<Vec<_>>()[..] {
             ["", _] => {
-                return Err(clap_error::value_validation(
-                    cmd,
-                    arg.unwrap().to_string(),
-                    value.to_string(),
-                    &["empty KEY".into()],
-                ));
+                return Err(value_validation(&["empty KEY".into()]));
             }
             [_, ""] => {
-                return Err(clap_error::value_validation(
-                    cmd,
-                    arg.unwrap().to_string(),
-                    value.to_string(),
-                    &["empty VALUE".into()],
-                ));
+                return Err(value_validation(&["empty VALUE".into()]));
             }
             [lhs, rhs] => {
                 let rhs = rhs.to_string();
@@ -83,12 +82,7 @@ impl TypedValueParser for VarArgParser {
                                     _ => &["each word in KEY must be separated by exactly one '.'"
                                         .into()],
                                 };
-                                Err(clap_error::value_validation(
-                                    cmd,
-                                    arg.unwrap().to_string(),
-                                    value.to_string(),
-                                    suggestions,
-                                ))
+                                Err(value_validation(suggestions))
                             } else {
                                 Ok(s.to_string())
                             }
@@ -97,36 +91,16 @@ impl TypedValueParser for VarArgParser {
                 VarArg { lhs: Lhs(lhs), rhs }
             }
             [_, _, ..] => {
-                return Err(clap_error::value_validation(
-                    cmd,
-                    arg.unwrap().to_string(),
-                    value.to_string(),
-                    &["too many equals signs".into()],
-                ));
+                return Err(value_validation(&["too many equals signs".into()]));
             }
             [""] => {
-                return Err(clap_error::value_validation(
-                    cmd,
-                    arg.unwrap().to_string(),
-                    value.to_string(),
-                    &["empty".into()],
-                ));
+                return Err(value_validation(&["empty".into()]));
             }
             [_] => {
-                return Err(clap_error::value_validation(
-                    cmd,
-                    arg.unwrap().to_string(),
-                    value.to_string(),
-                    &["no equals sign".into()],
-                ));
+                return Err(value_validation(&["no equals sign".into()]));
             }
             [] => {
-                return Err(clap_error::value_validation(
-                    cmd,
-                    arg.unwrap().to_string(),
-                    value.to_string(),
-                    &["no content".into()],
-                ));
+                return Err(value_validation(&["no content".into()]));
             }
         };
 
