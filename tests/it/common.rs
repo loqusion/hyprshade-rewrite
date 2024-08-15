@@ -154,8 +154,8 @@ impl CommandExt for Command {
 macro_rules! hyprshade_cmd_snapshot {
     ($($arg:tt)*) => {{
         let mut settings = ::insta::Settings::clone_current();
-        for (matcher, replacement) in $crate::common::INSTA_FILTERS {
-            settings.add_filter(matcher, *replacement);
+        for &(matcher, replacement) in $crate::common::INSTA_FILTERS {
+            settings.add_filter(matcher, replacement);
         }
         let _guard = settings.bind_to_scope();
         $crate::_hyprshade_cmd_snapshot_base!($($arg)*);
