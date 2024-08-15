@@ -1,6 +1,7 @@
 //! **WARNING:** This library crate is not meant to be used directly.
 //! Breaking changes may occur in any of the exported items without warning.
 
+#![cfg(feature = "_lib")]
 #![allow(dead_code)]
 
 mod builtin;

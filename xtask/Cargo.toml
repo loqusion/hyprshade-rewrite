@@ -6,5 +6,5 @@ edition = "2021"
 
 [dependencies]
 eyre = "0.6.12"
-hyprshade = { version = "0.1.0", path = ".." }
+hyprshade = { version = "0.1.0", path = "..", features = ["_lib"] }
 xshell = "0.2.6"

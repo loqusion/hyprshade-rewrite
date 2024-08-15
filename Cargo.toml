@@ -9,6 +9,7 @@ repository = "https://github.com/loqusion/hyprshade"
 default = ["compat"]
 compat = []
 
+_lib = []
 _mock_time = []
 
 [dependencies]
