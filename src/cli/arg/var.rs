@@ -141,7 +141,7 @@ pub trait MergeVarArg: CommandFactory {
         let map = vars
             .into_iter()
             .try_fold(TemplateDataMap::new(), |mut map, arg| {
-                let data = match TemplateData::from_cli_arg(&arg.rhs) {
+                let leaf_data = match TemplateData::from_cli_arg(&arg.rhs) {
                     Ok(data) => data,
                     Err(err) => {
                         let mut messages = Vec::from([err.to_string()]);
@@ -159,15 +159,12 @@ pub trait MergeVarArg: CommandFactory {
                         ));
                     }
                 };
-                let VarArg { mut lhs, .. } = arg;
-                let last = lhs.0.pop().expect("lhs should be non-empty");
-                let data = lhs
-                    .0
-                    .into_iter()
-                    .rev()
-                    .fold(TemplateDataMap::from([(last, data)]), |map, key| {
-                        TemplateDataMap::from([(key, TemplateData::from(map))])
-                    });
+                let mut lhs_iter = arg.lhs.0.into_iter().rev();
+                let leaf_key = lhs_iter.next().expect("lhs should be non-empty");
+                let data = lhs_iter.fold(
+                    TemplateDataMap::from([(leaf_key, leaf_data)]),
+                    |map, key| TemplateDataMap::from([(key, TemplateData::from(map))]),
+                );
 
                 map.merge_deep_force(data);
 
