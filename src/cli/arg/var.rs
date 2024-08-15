@@ -62,11 +62,23 @@ impl TypedValueParser for VarArgParser {
         };
 
         let ret = match value.split(ASSIGN).collect::<Vec<_>>()[..] {
+            [] => {
+                return Err(value_validation(&["no content".into()]));
+            }
+            [""] => {
+                return Err(value_validation(&["empty".into()]));
+            }
+            [_] => {
+                return Err(value_validation(&["no equals sign".into()]));
+            }
             ["", _] => {
                 return Err(value_validation(&["empty KEY".into()]));
             }
             [_, ""] => {
                 return Err(value_validation(&["empty VALUE".into()]));
+            }
+            [_, _, _, ..] => {
+                return Err(value_validation(&["too many equals signs".into()]));
             }
             [lhs, rhs] => {
                 let rhs = rhs.to_string();
@@ -89,18 +101,6 @@ impl TypedValueParser for VarArgParser {
                         })
                         .collect::<Result<_, _>>()?;
                 VarArg { lhs: Lhs(lhs), rhs }
-            }
-            [_, _, ..] => {
-                return Err(value_validation(&["too many equals signs".into()]));
-            }
-            [""] => {
-                return Err(value_validation(&["empty".into()]));
-            }
-            [_] => {
-                return Err(value_validation(&["no equals sign".into()]));
-            }
-            [] => {
-                return Err(value_validation(&["no content".into()]));
             }
         };
 
