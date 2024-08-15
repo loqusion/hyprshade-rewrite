@@ -139,12 +139,12 @@ impl CommandExt for Command {
             let stderr = String::from_utf8_lossy(&output.stderr);
             panic!(
                 "\
-                failed running {command}
+                failed running {command}\n\
                 exit_code: {code}\n\
                 ---- stdout ----\n\
                 {stdout}\n\
                 ---- stderr ----\n\
-                {stderr}
+                {stderr}\
                 "
             );
         }
