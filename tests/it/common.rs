@@ -35,14 +35,14 @@ pub const INSTA_FILTERS: &[(&str, &str)] = &[
 
 fn bootstrap_home(path: &Path) -> PathBuf {
     let home = path.join("hyprshade-test-dir/home");
-    for (_, path) in DIRS {
-        let path = home.join(path);
-        fs::create_dir_all(path).unwrap();
+    for (_, dir_name) in DIRS {
+        let p = home.join(dir_name);
+        fs::create_dir_all(p).unwrap();
     }
-    for config_dir in CONFIG_DIRS {
-        let mut path = home.join(".config");
-        path.push(config_dir);
-        fs::create_dir_all(path).unwrap();
+    for dir_name in CONFIG_DIRS {
+        let mut p = home.join(".config");
+        p.push(dir_name);
+        fs::create_dir_all(p).unwrap();
     }
     home
 }
