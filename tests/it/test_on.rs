@@ -2,6 +2,23 @@ mod error {
     use crate::common::{hyprshade_cmd_snapshot, Space};
 
     #[test]
+    fn fails_resolving_shader() {
+        let space = Space::new();
+        hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("on").args(["invalid"]), @r###"
+        success: false
+        exit_code: 1
+        ----- stdout -----
+
+        ----- stderr -----
+        Error: 
+           0: [91mshader named "invalid" not found[0m
+
+        Location:
+           [LOCATION]
+        "###);
+    }
+
+    #[test]
     fn fails_merging_var() {
         let space = Space::new();
         hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("on").args([
