@@ -30,7 +30,7 @@ lazy_static! {
 #[proc_macro_attribute]
 pub fn hyprland_test(attr: TokenStream, item: TokenStream) -> TokenStream {
     let item = parse_macro_input!(item as ItemFn);
-    // Parsing the attribute is done to validate meta item syntax (in this case, lack thereof)
+    // Verify there are no attribute arguments
     let _ = parse_macro_input!(attr as HyprlandTestAttribute);
 
     let ignore_attr = if *IS_HYPRLAND_RUNNING {
@@ -50,7 +50,6 @@ pub fn hyprland_test(attr: TokenStream, item: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 struct HyprlandTestAttribute {}
 
