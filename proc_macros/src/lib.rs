@@ -5,7 +5,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
     parse::{Parse, ParseStream},
-    parse_macro_input, Attribute, ItemFn,
+    parse_macro_input, ItemFn,
 };
 
 lazy_static! {
@@ -52,14 +52,10 @@ pub fn hyprland_test(attr: TokenStream, item: TokenStream) -> TokenStream {
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
-struct HyprlandTestAttribute {
-    attrs: Vec<Attribute>,
-}
+struct HyprlandTestAttribute {}
 
 impl Parse for HyprlandTestAttribute {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        Ok(Self {
-            attrs: input.call(Attribute::parse_outer)?,
-        })
+    fn parse(_input: ParseStream) -> syn::Result<Self> {
+        Ok(Self {})
     }
 }
