@@ -48,7 +48,7 @@ fn bootstrap_home(path: &Path) -> PathBuf {
 }
 
 fn get_bin() -> PathBuf {
-    get_cargo_bin(&env!("CARGO_PKG_NAME").replace('-', "_"))
+    get_cargo_bin(env!("CARGO_PKG_NAME"))
 }
 
 pub struct Space {
