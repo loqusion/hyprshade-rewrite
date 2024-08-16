@@ -36,6 +36,7 @@ pub const INSTA_FILTERS: &[(&str, &str)] = &[
 
 const FIXTURE_SIMPLE: &str = include_str!("./fixtures/simple.glsl");
 
+#[track_caller]
 fn bootstrap_home(path: &Path) -> PathBuf {
     let home = path.join("hyprshade-test-dir/home");
     for (_, dir_name) in DIRS {
@@ -63,6 +64,7 @@ pub struct Space {
 }
 
 impl Space {
+    #[track_caller]
     pub fn new() -> Self {
         let tempdir = TempDir::new().unwrap();
         let working_dir = tempdir.path().join("working_dir");
@@ -85,10 +87,12 @@ impl Space {
         self.with_time("00:00:00")
     }
 
+    #[track_caller]
     pub fn with_config(&mut self, config: &str) -> &mut Self {
         let config_path = self.home().join(".config/hyprshade/config.toml");
-        fs::write(&config_path, config)
-            .unwrap_or_else(|err| panic!("failed writing to {}: {}", config_path.display(), err));
+        if let Err(err) = fs::write(&config_path, config) {
+            panic!("failed writing to {}: {}", config_path.display(), err);
+        }
         self
     }
 
@@ -120,25 +124,36 @@ impl Space {
         self.home.as_ref()
     }
 
+    #[track_caller]
     pub fn runtime_dir(&self) -> PathBuf {
-        let runtime_dir = env::var("XDG_RUNTIME_DIR").unwrap_or_else(|err| panic!("{err}"));
+        let runtime_dir = match env::var("XDG_RUNTIME_DIR") {
+            Ok(dir) => dir,
+            Err(err) => panic!("fetching XDG_RUNTIME_DIR: {err}"),
+        };
         PathBuf::from(runtime_dir).join("hyprshade")
     }
 
+    #[track_caller]
     pub fn fixture_simple(&self) -> PathBuf {
         let fixture_path = self.runtime_dir().join("simple.glsl");
-        fs::write(&fixture_path, FIXTURE_SIMPLE).unwrap_or_else(|err| panic!("{err}"));
+        if let Err(err) = fs::write(&fixture_path, FIXTURE_SIMPLE) {
+            panic!("writing to {}: {}", fixture_path.display(), err);
+        }
         fixture_path
     }
 
+    #[track_caller]
     pub fn read_runtime_shader(&self, shader_ident: impl Into<ShaderIdentifier>) -> String {
         self._read_runtime_shader(shader_ident.into())
     }
 
+    #[track_caller]
     fn _read_runtime_shader(&self, shader_ident: ShaderIdentifier) -> String {
         let path = self.runtime_dir().join(shader_ident.to_path());
-        fs::read_to_string(&path)
-            .unwrap_or_else(|err| panic!("failed reading {}: {}", path.display(), err))
+        match fs::read_to_string(&path) {
+            Ok(contents) => contents,
+            Err(err) => panic!("failed reading {}: {}", path.display(), err),
+        }
     }
 
     pub fn stash_runtime_shader(&self, shader_ident: impl Into<ShaderIdentifier>) -> FileDropGuard {
@@ -197,14 +212,16 @@ impl Drop for FileDropGuard {
 }
 
 pub trait CommandExt {
+    #[track_caller]
     fn run(&mut self);
 }
 
 impl CommandExt for Command {
     fn run(&mut self) {
-        let output = self
-            .output()
-            .unwrap_or_else(|err| panic!("failed running {:?}: {}", self, err));
+        let output = match self.output() {
+            Ok(output) => output,
+            Err(err) => panic!("failed running {:?}: {}", self, err),
+        };
 
         if output.status.code() != Some(0) {
             let command = format!("{:?}", self);
