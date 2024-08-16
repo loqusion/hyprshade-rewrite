@@ -25,6 +25,10 @@ enum ShaderInner {
 
 impl Shader {
     pub fn from_path_buf(path_buf: PathBuf) -> Self {
+        debug_assert!(
+            path_buf.is_absolute(),
+            "path should be canonicalized before passing to Shader::from_path_buf"
+        );
         Self(ShaderInner::Path(path_buf))
     }
 

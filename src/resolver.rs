@@ -1,6 +1,6 @@
 use std::{
     ffi::OsStr,
-    io,
+    fs, io,
     path::{Path, PathBuf, MAIN_SEPARATOR},
 };
 
@@ -40,32 +40,45 @@ impl<'a> Resolver<'a> {
 
     pub fn resolve(&self) -> Result<Shader, Error> {
         match &self.0 {
-            ResolverInner::WithPath(r) => r.resolve(),
-            ResolverInner::WithName(r) => r.resolve(),
+            ResolverInner::WithPath(r) => Ok(r.resolve()?),
+            ResolverInner::WithName(r) => Ok(r.resolve()?),
         }
     }
 }
 
 impl ResolverWithPath<'_> {
     #[tracing::instrument(level = "debug", skip(self), fields(path = ?self.0))]
-    fn resolve(&self) -> Result<Shader, Error> {
+    fn resolve(&self) -> Result<Shader, ErrorFromPath> {
         let Self(path) = *self;
 
         match path.try_exists() {
-            Ok(true) => Ok(Shader::from_path_buf(path.to_path_buf())),
-            Ok(false) => Err(Error::io_error_not_found(path.to_path_buf())),
-            Err(e) => Err(Error::IoError(path.to_path_buf(), e)),
+            Ok(true) => {
+                let path =
+                    fs::canonicalize(path).map_err(|source| ErrorFromPath::Canonicalize {
+                        path: path.to_path_buf(),
+                        source,
+                    })?;
+                Ok(Shader::from_path_buf(path.to_path_buf()))
+            }
+            Ok(false) => Err(ErrorFromPath::io_error_not_found(path.to_path_buf())),
+            Err(e) => Err(ErrorFromPath::IoError(path.to_path_buf(), e)),
         }
     }
 }
 
 impl ResolverWithName<'_> {
     #[tracing::instrument(level = "debug", skip(self), fields(name = ?self.0.to_string_lossy()))]
-    fn resolve(&self) -> Result<Shader, Error> {
+    fn resolve(&self) -> Result<Shader, ErrorFromName> {
         let Self(name) = &self;
 
         for dir in shader_dirs() {
             if let Some(path) = self.resolve_in(&dir) {
+                let path =
+                    fs::canonicalize(&path).map_err(|source| ErrorFromName::Canonicalize {
+                        name: name.to_string_lossy().into_owned(),
+                        path,
+                        source,
+                    })?;
                 trace!("Resolved {name:?} to {path:?}");
                 return Ok(Shader::from_path_buf(path));
             }
@@ -76,7 +89,7 @@ impl ResolverWithName<'_> {
             return Ok(Shader::from_builtin(builtin_shader));
         }
 
-        Err(Error::ShaderNameNotFound(
+        Err(ErrorFromName::ShaderNameNotFound(
             name.to_string_lossy().into_owned(),
         ))
     }
@@ -121,13 +134,35 @@ impl ResolverWithName<'_> {
 #[non_exhaustive]
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("could not read path {0:?}")]
-    IoError(PathBuf, #[source] io::Error),
-    #[error("shader named {0:?} not found")]
-    ShaderNameNotFound(String),
+    #[error(transparent)]
+    FromPath(#[from] ErrorFromPath),
+    #[error(transparent)]
+    FromName(#[from] ErrorFromName),
 }
 
-impl Error {
+#[non_exhaustive]
+#[derive(thiserror::Error, Debug)]
+pub enum ErrorFromPath {
+    #[error("could not read path {0:?}")]
+    IoError(PathBuf, #[source] io::Error),
+    #[error("could not canonicalize path {path:?}")]
+    Canonicalize { path: PathBuf, source: io::Error },
+}
+
+#[non_exhaustive]
+#[derive(thiserror::Error, Debug)]
+pub enum ErrorFromName {
+    #[error("shader named {0:?} not found")]
+    ShaderNameNotFound(String),
+    #[error("could not canonicalize path {path:?} for shader {name:?}")]
+    Canonicalize {
+        name: String,
+        path: PathBuf,
+        source: io::Error,
+    },
+}
+
+impl ErrorFromPath {
     fn io_error_not_found(path: PathBuf) -> Self {
         Self::IoError(
             path,

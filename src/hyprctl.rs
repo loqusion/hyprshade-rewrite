@@ -36,6 +36,10 @@ pub mod shader {
 
     #[tracing::instrument(level = "debug")]
     pub fn set(shader_path: &Path) -> eyre::Result<()> {
+        debug_assert!(
+            shader_path.is_absolute(),
+            "path should be canonicalized before passing to hyprctl::shader::set"
+        );
         _set(shader_path.as_os_str()).wrap_err("failed to set screen shader")
     }
 
