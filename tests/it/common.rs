@@ -1,4 +1,5 @@
 use std::{
+    env,
     ffi::OsStr,
     fs,
     path::{Path, PathBuf},
@@ -32,6 +33,8 @@ pub const INSTA_FILTERS: &[(&str, &str)] = &[
         "",
     ),
 ];
+
+const FIXTURE_SIMPLE: &str = include_str!("./fixtures/simple.glsl");
 
 fn bootstrap_home(path: &Path) -> PathBuf {
     let home = path.join("hyprshade-test-dir/home");
@@ -116,6 +119,81 @@ impl Space {
     pub fn home(&self) -> &Path {
         self.home.as_ref()
     }
+
+    pub fn runtime_dir(&self) -> PathBuf {
+        let runtime_dir = env::var("XDG_RUNTIME_DIR").unwrap_or_else(|err| panic!("{err}"));
+        PathBuf::from(runtime_dir).join("hyprshade")
+    }
+
+    pub fn fixture_simple(&self) -> PathBuf {
+        let fixture_path = self.runtime_dir().join("simple.glsl");
+        fs::write(&fixture_path, FIXTURE_SIMPLE).unwrap_or_else(|err| panic!("{err}"));
+        fixture_path
+    }
+
+    pub fn read_runtime_shader(&self, shader_ident: impl Into<ShaderIdentifier>) -> String {
+        self._read_runtime_shader(shader_ident.into())
+    }
+
+    fn _read_runtime_shader(&self, shader_ident: ShaderIdentifier) -> String {
+        let path = self.runtime_dir().join(shader_ident.to_path());
+        fs::read_to_string(&path)
+            .unwrap_or_else(|err| panic!("failed reading {}: {}", path.display(), err))
+    }
+
+    pub fn stash_runtime_shader(&self, shader_ident: impl Into<ShaderIdentifier>) -> FileDropGuard {
+        self._stash_runtime_shader(shader_ident.into())
+    }
+
+    fn _stash_runtime_shader(&self, shader_ident: ShaderIdentifier) -> FileDropGuard {
+        let path = self.runtime_dir().join(shader_ident.to_path());
+        FileDropGuard::stash(path)
+    }
+}
+
+pub struct ShaderIdentifier {
+    name: &'static str,
+}
+
+impl ShaderIdentifier {
+    pub fn to_path(&self) -> PathBuf {
+        PathBuf::from(format!("{}.glsl", self.name))
+    }
+}
+
+impl From<&'static str> for ShaderIdentifier {
+    fn from(value: &'static str) -> Self {
+        Self { name: value }
+    }
+}
+
+pub struct FileDropGuard {
+    path: PathBuf,
+    stash: Option<String>,
+}
+
+impl FileDropGuard {
+    pub fn stash<P: AsRef<Path>>(path: P) -> Self {
+        Self::_stash(path.as_ref().to_owned())
+    }
+
+    fn _stash(path: PathBuf) -> Self {
+        let stash = fs::read_to_string(&path).ok();
+        if stash.is_some() {
+            fs::remove_file(&path).ok();
+        }
+        Self { path, stash }
+    }
+}
+
+impl Drop for FileDropGuard {
+    fn drop(&mut self) {
+        if let Some(contents) = &self.stash {
+            fs::write(&self.path, contents).unwrap_or_else(|err| {
+                eprintln!("failed restoring stash to {}: {}", self.path.display(), err);
+            });
+        }
+    }
 }
 
 pub trait CommandExt {
@@ -173,3 +251,24 @@ macro_rules! _hyprshade_cmd_snapshot_base {
 }
 
 pub(crate) use hyprshade_cmd_snapshot;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn stash(path: &Path) {
+        let _stash = FileDropGuard::stash(path);
+        assert!(!path.exists());
+    }
+
+    #[test]
+    fn test_stash() {
+        let space = Space::new();
+        let path = space.working_dir().join("file.txt");
+        fs::write(&path, "content").unwrap();
+
+        assert_eq!(fs::read_to_string(&path).unwrap(), "content");
+        stash(&path);
+        assert_eq!(fs::read_to_string(&path).unwrap(), "content");
+    }
+}

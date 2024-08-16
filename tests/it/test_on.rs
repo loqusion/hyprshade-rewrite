@@ -1,3 +1,40 @@
+use insta::assert_snapshot;
+use proc_macros::hyprland_test;
+
+use crate::common::{hyprshade_cmd_snapshot, CommandExt, Space};
+
+#[hyprland_test]
+fn builtin_shader() {
+    let space = Space::new();
+    let _stash = space.stash_runtime_shader("vibrance");
+    space.hyprshade_cmd().arg("off").run();
+
+    hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("on").args(["vibrance"]), @r###"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ----- stderr -----
+    "###);
+
+    assert_snapshot!(space.read_runtime_shader("vibrance"));
+}
+
+#[hyprland_test]
+fn path_shader() {
+    let space = Space::new();
+    space.hyprshade_cmd().arg("off").run();
+    let fixture_path = space.fixture_simple();
+
+    hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("on").arg(&fixture_path), @r###"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ----- stderr -----
+    "###);
+}
+
 mod error {
     use crate::common::{hyprshade_cmd_snapshot, Space};
 
