@@ -2,6 +2,7 @@ use std::{
     collections::HashMap,
     error::Error,
     fmt::{self, Display},
+    iter,
 };
 
 use clap::{builder::TypedValueParser, CommandFactory};
@@ -118,12 +119,10 @@ pub trait MergeVarArg: CommandFactory {
                 let leaf_data = match TemplateData::from_cli_arg(&arg.rhs) {
                     Ok(data) => data,
                     Err(err) => {
-                        let mut messages = Vec::from([err.to_string()]);
-                        let mut err: &dyn Error = &err;
-                        while let Some(source) = err.source() {
-                            messages.push(source.to_string());
-                            err = source;
-                        }
+                        let messages =
+                            iter::successors(Some(&err as &dyn Error), |err| (*err).source())
+                                .map(ToString::to_string)
+                                .collect::<Vec<_>>();
 
                         return Err(clap_error::value_validation(
                             &Self::command(),
