@@ -18,7 +18,7 @@ lazy_static! {
 /// In other words, a test not running in a Hyprland instance should be roughly equivalent to the
 /// following:
 ///
-/// ```ignore
+/// ```no_run
 /// #[test]
 /// #[ignore = "requires hyprland"]
 /// fn test() { /* ... */ }
