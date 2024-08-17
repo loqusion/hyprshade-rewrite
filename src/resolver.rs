@@ -7,7 +7,7 @@ use std::{
 use tracing::{debug, trace};
 use walkdir::WalkDir;
 
-use crate::{builtin::BUILTIN_SHADERS, dirs::shader_dirs, shader::Shader, util::PathExt};
+use crate::{builtin::BuiltinShader, dirs::shader_dirs, shader::Shader, util::PathExt};
 
 const MAX_DEPTH: usize = 10;
 
@@ -84,7 +84,7 @@ impl ResolverWithName<'_> {
             }
         }
 
-        if let Some(builtin_shader) = BUILTIN_SHADERS.get(name.as_encoded_bytes()) {
+        if let Some(builtin_shader) = BuiltinShader::get(name.as_encoded_bytes()) {
             trace!("Resolved {name:?} to builtin shader");
             return Ok(Shader::from_builtin(builtin_shader));
         }

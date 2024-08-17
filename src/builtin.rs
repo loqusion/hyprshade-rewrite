@@ -12,9 +12,7 @@ pub struct BuiltinShader {
     value: &'static BuiltinShaderValue,
 }
 
-pub struct BuiltinShaders {
-    inner: phf::Map<&'static [u8], BuiltinShaderValue>,
-}
+type BuiltinShaders = phf::Map<&'static [u8], BuiltinShaderValue>;
 
 #[derive(Debug)]
 struct BuiltinShaderValue {
@@ -46,26 +44,24 @@ enum Variable {
     Map(phf::Map<&'static str, Variable>),
 }
 
-impl BuiltinShaders {
-    pub fn get<K>(&'static self, key: &K) -> Option<BuiltinShader>
+impl BuiltinShader {
+    pub fn get<K>(name: &K) -> Option<BuiltinShader>
     where
         K: AsRef<[u8]> + ?Sized,
     {
-        self.inner
-            .get_entry(key.as_ref())
-            .map(|(key, value)| BuiltinShader {
+        BuiltinShader::_get(name.as_ref())
+    }
+
+    fn _get(name: &[u8]) -> Option<BuiltinShader> {
+        BUILTIN_SHADERS.get_entry(name).map(|(key, value)| {
+            BuiltinShader {
                 // SAFETY: All keys are valid UTF-8 strings.
                 name: unsafe { std::str::from_utf8_unchecked(key) },
                 value,
-            })
+            }
+        })
     }
 
-    const fn new(inner: phf::Map<&'static [u8], BuiltinShaderValue>) -> Self {
-        Self { inner }
-    }
-}
-
-impl BuiltinShader {
     pub fn name(&self) -> &'static str {
         self.name
     }
@@ -137,7 +133,7 @@ impl From<&Variable> for TemplateData {
     }
 }
 
-pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders::new(phf_map! {
+const BUILTIN_SHADERS: BuiltinShaders = phf_map! {
     b"blue-light-filter" => BuiltinShaderValue {
         contents: include_str!("shaders/blue-light-filter.glsl.mustache"),
         is_template: true,
@@ -274,7 +270,7 @@ pub const BUILTIN_SHADERS: BuiltinShaders = BuiltinShaders::new(phf_map! {
             },
         },
     },
-});
+};
 
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
@@ -296,16 +292,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn entry_pointer_equality() {
-        let raw_entry = BUILTIN_SHADERS
-            .inner
-            .get_entry(b"blue-light-filter")
-            .unwrap();
-        let wrapper_entry = BUILTIN_SHADERS.get("blue-light-filter").unwrap();
-        assert!(std::ptr::eq(
-            *raw_entry.0,
-            wrapper_entry.name as *const str as *const [u8]
-        ));
-        assert!(std::ptr::eq(raw_entry.1, wrapper_entry.value));
+    fn builtin_shader_eq() {
+        let entry_1 = BuiltinShader::get("blue-light-filter").unwrap();
+        let entry_2 = BuiltinShader::get("blue-light-filter").unwrap();
+        let entry_3 = BuiltinShader::get("vibrance").unwrap();
+
+        assert_eq!(entry_1, entry_2);
+        assert_ne!(entry_1, entry_3);
+        assert_ne!(entry_2, entry_3);
     }
 }
