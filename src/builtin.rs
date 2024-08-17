@@ -12,38 +12,6 @@ pub struct BuiltinShader {
     value: &'static BuiltinShaderValue,
 }
 
-type BuiltinShaders = phf::Map<&'static [u8], BuiltinShaderValue>;
-
-#[derive(Debug)]
-struct BuiltinShaderValue {
-    contents: &'static str,
-    is_template: bool,
-    metadata: Metadata,
-}
-
-#[derive(Debug)]
-struct Metadata {
-    full_name: &'static str,
-    description: &'static str,
-    variables: phf::Map<&'static str, Variable>,
-}
-
-#[derive(Debug)]
-enum Variable {
-    Float {
-        description: &'static str,
-        min: f64,
-        max: f64,
-        default: f64,
-    },
-    Enum {
-        description: &'static str,
-        variants: &'static [&'static str],
-        default: &'static str,
-    },
-    Map(phf::Map<&'static str, Variable>),
-}
-
 impl BuiltinShader {
     pub fn get<K>(name: &K) -> Option<BuiltinShader>
     where
@@ -132,6 +100,38 @@ impl From<&Variable> for TemplateData {
         }
     }
 }
+
+#[derive(Debug)]
+struct BuiltinShaderValue {
+    contents: &'static str,
+    is_template: bool,
+    metadata: Metadata,
+}
+
+#[derive(Debug)]
+struct Metadata {
+    full_name: &'static str,
+    description: &'static str,
+    variables: phf::Map<&'static str, Variable>,
+}
+
+#[derive(Debug)]
+enum Variable {
+    Float {
+        description: &'static str,
+        min: f64,
+        max: f64,
+        default: f64,
+    },
+    Enum {
+        description: &'static str,
+        variants: &'static [&'static str],
+        default: &'static str,
+    },
+    Map(phf::Map<&'static str, Variable>),
+}
+
+type BuiltinShaders = phf::Map<&'static [u8], BuiltinShaderValue>;
 
 const BUILTIN_SHADERS: BuiltinShaders = phf_map! {
     b"blue-light-filter" => BuiltinShaderValue {
