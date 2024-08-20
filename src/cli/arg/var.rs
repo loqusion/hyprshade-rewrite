@@ -5,9 +5,6 @@ use color_eyre::owo_colors::OwoColorize;
 
 use crate::template::{MergeDeep, TemplateData, TemplateDataMap};
 
-const LHS_SEP: &str = ".";
-const ASSIGN: &str = "=";
-
 #[derive(Debug, Clone)]
 pub struct VarArg {
     name: ArgName,
@@ -71,7 +68,7 @@ impl TypedValueParser for VarArgParser {
             )
         };
 
-        let ret = match value.split(ASSIGN).collect::<Vec<_>>()[..] {
+        let ret = match value.split(VarArg::ASSIGN).collect::<Vec<_>>()[..] {
             [] => {
                 return Err(value_validation(&["no content".into()]));
             }
@@ -93,11 +90,11 @@ impl TypedValueParser for VarArgParser {
             [lhs, rhs] => {
                 let rhs = rhs.to_string();
                 let lhs: Vec<String> =
-                    lhs.split(LHS_SEP)
+                    lhs.split(VarArg::LHS_SEP)
                         .enumerate()
                         .map(|(i, s)| {
                             if s.is_empty() {
-                                let sep_count = lhs.matches(LHS_SEP).count();
+                                let sep_count = lhs.matches(VarArg::LHS_SEP).count();
                                 let suggestions: &[String] = match i {
                                     0 => &["KEY must not begin with '.'".into()],
                                     _ if i == sep_count => &["KEY must not end with '.'".into()],
@@ -196,6 +193,9 @@ fn check_no_conflicts<C: CommandFactory>(vars: &[VarArg]) -> Result<(), clap::Er
 }
 
 impl VarArg {
+    const LHS_SEP: &'static str = ".";
+    const ASSIGN: &'static str = "=";
+
     fn display(&self) -> String {
         format!(
             "{opt} {value}",
@@ -212,7 +212,7 @@ impl VarArg {
         format!(
             "{lhs}{eq}{rhs}",
             lhs = &self.lhs,
-            eq = ASSIGN,
+            eq = VarArg::ASSIGN,
             rhs = &self.rhs
         )
     }
@@ -230,7 +230,7 @@ impl fmt::Display for ArgName {
 
 impl fmt::Display for Lhs {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", &self.0.join(LHS_SEP))
+        write!(f, "{}", &self.0.join(VarArg::LHS_SEP))
     }
 }
 
