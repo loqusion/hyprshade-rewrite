@@ -27,9 +27,9 @@ mod error {
         let mut space = Space::new();
         space.with_any_time().with_config(
             r#"
-            [[shader]]
-            name = "invalid"
-            default = true
+                [[shader]]
+                name = "invalid"
+                default = true
             "#,
         );
         hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("auto"), @r###"

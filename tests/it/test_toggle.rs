@@ -95,9 +95,9 @@ mod error {
         let mut space = Space::new();
         space.with_any_time().with_config(
             r#"
-            [[shader]]
-            name = "invalid"
-            default = true
+                [[shader]]
+                name = "invalid"
+                default = true
             "#,
         );
         space.hyprshade_cmd().arg("off").run();
@@ -129,9 +129,9 @@ mod error {
         let mut space = Space::new();
         space.with_any_time().with_config(
             r#"
-            [[shader]]
-            name = "invalid"
-            default = true
+                [[shader]]
+                name = "invalid"
+                default = true
             "#,
         );
         space.hyprshade_cmd().arg("on").arg("vibrance").run();
@@ -162,10 +162,10 @@ mod error {
         let mut space = Space::new();
         space.with_time("01:00:00").with_config(
             r#"
-            [[shader]]
-            name = "invalid"
-            start_time = 00:00:00
-            end_time = 02:00:00
+                [[shader]]
+                name = "invalid"
+                start_time = 00:00:00
+                end_time = 02:00:00
             "#,
         );
         space.hyprshade_cmd().arg("on").arg("vibrance").run();
@@ -197,13 +197,13 @@ mod error {
         let mut space = Space::new();
         space.with_time("01:00:00").with_config(
             r#"
-            [[shader]]
-            name = "invalid"
-            default = true
-            [[shader]]
-            name = "vibrance"
-            start_time = 00:00:00
-            end_time = 02:00:00
+                [[shader]]
+                name = "invalid"
+                default = true
+                [[shader]]
+                name = "vibrance"
+                start_time = 00:00:00
+                end_time = 02:00:00
             "#,
         );
         space.hyprshade_cmd().arg("on").arg("vibrance").run();
