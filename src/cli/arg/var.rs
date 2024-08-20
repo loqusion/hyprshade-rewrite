@@ -37,6 +37,24 @@ impl TypedValueParser for VarArgParser {
         arg: Option<&clap::Arg>,
         value: &std::ffi::OsStr,
     ) -> Result<Self::Value, clap::Error> {
+        // This assertion is necessary for unambiguously referencing the option name in error messages
+        debug_assert!(
+            arg.map(|a| {
+                a.get_long().iter().len()
+                    + a.get_short().iter().len()
+                    + a.get_all_aliases().map_or(0, |al| al.len())
+                    + a.get_all_short_aliases().map_or(0, |al| al.len())
+            })
+            .unwrap_or(0)
+                <= 1,
+            "There must be only one way to refer to {arg_name} in subcommand {cmd}; remove all but one of the following: long, short, alias, short_alias",
+            arg_name = arg.map_or_else(
+                || format!("argument using `{}`", std::any::type_name::<Self>()),
+                |a| format!("`{}`", a.get_id())
+            ),
+            cmd = format_args!("'{}'", cmd.get_name())
+        );
+
         let value = match value.to_str() {
             Some(value) => value,
             None => {
