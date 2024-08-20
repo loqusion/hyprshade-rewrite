@@ -62,7 +62,9 @@ impl TypedValueParser for VarArgParser {
         let value_validation = |suggested: &[String]| {
             clap_error::value_validation(
                 cmd,
-                arg.unwrap().to_string(),
+                arg.map(ToString::to_string).unwrap_or_else(|| {
+                    format!("argument using `{}`", std::any::type_name::<Self>())
+                }),
                 value.to_string(),
                 suggested,
             )
