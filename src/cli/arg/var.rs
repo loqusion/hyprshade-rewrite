@@ -1,9 +1,4 @@
-use std::{
-    collections::HashMap,
-    error::Error,
-    fmt::{self, Display},
-    iter,
-};
+use std::{collections::HashMap, error::Error, fmt, iter};
 
 use clap::{builder::TypedValueParser, CommandFactory};
 use color_eyre::owo_colors::OwoColorize;
@@ -15,24 +10,20 @@ const ASSIGN: &str = "=";
 
 #[derive(Debug, Clone)]
 pub struct VarArg {
+    name: ArgName,
     lhs: Lhs,
     rhs: String,
 }
 
 #[derive(Debug, Clone)]
+enum ArgName {
+    Unknown,
+    Short(char),
+    Long(String),
+}
+
+#[derive(Debug, Clone)]
 struct Lhs(Vec<String>);
-
-impl Display for VarArg {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}{}{}", &self.lhs, ASSIGN, &self.rhs)
-    }
-}
-
-impl Display for Lhs {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", &self.0.join(LHS_SEP))
-    }
-}
 
 #[derive(Copy, Clone, Debug)]
 pub struct VarArgParser;
@@ -101,7 +92,14 @@ impl TypedValueParser for VarArgParser {
                             }
                         })
                         .collect::<Result<_, _>>()?;
-                VarArg { lhs: Lhs(lhs), rhs }
+                let name = arg
+                    .and_then(ArgName::from_clap_arg)
+                    .unwrap_or(ArgName::Unknown);
+                VarArg {
+                    name,
+                    lhs: Lhs(lhs),
+                    rhs,
+                }
             }
         };
 
@@ -110,8 +108,8 @@ impl TypedValueParser for VarArgParser {
 }
 
 pub trait MergeVarArg: CommandFactory {
-    fn merge_into_data(vars: Vec<VarArg>, arg_name: &str) -> Result<TemplateDataMap, clap::Error> {
-        check_no_conflicts::<Self>(&vars, arg_name)?;
+    fn merge_into_data(vars: Vec<VarArg>) -> Result<TemplateDataMap, clap::Error> {
+        check_no_conflicts::<Self>(&vars)?;
 
         let map = vars
             .into_iter()
@@ -126,8 +124,8 @@ pub trait MergeVarArg: CommandFactory {
 
                         return Err(clap_error::value_validation(
                             &Self::command(),
-                            format!("--{arg_name}"),
-                            arg.to_string(),
+                            arg.display_name(),
+                            arg.display_value(),
                             &messages,
                         ));
                     }
@@ -147,10 +145,7 @@ pub trait MergeVarArg: CommandFactory {
     }
 }
 
-fn check_no_conflicts<C: CommandFactory>(
-    vars: &[VarArg],
-    arg_name: &str,
-) -> Result<(), clap::Error> {
+fn check_no_conflicts<C: CommandFactory>(vars: &[VarArg]) -> Result<(), clap::Error> {
     vars.iter().try_fold(
         HashMap::new(),
         |mut map: HashMap<&[_], (&VarArg, bool)>, arg| {
@@ -162,12 +157,12 @@ fn check_no_conflicts<C: CommandFactory>(
                     Some(&(prior, is_leaf_prior)) if is_leaf_prior || is_leaf => {
                         return Err(clap_error::argument_conflict(
                             &C::command(),
-                            format!("--{arg_name} {arg}"),
-                            format!("--{arg_name} {prior}"),
+                            arg.display(),
+                            prior.display(),
                             &[format!(
                                 "'{}' would override '{}'",
-                                format_args!("--{arg_name} {arg}").yellow(),
-                                format_args!("--{arg_name} {prior}").yellow(),
+                                arg.display().yellow(),
+                                prior.display().yellow(),
                             )],
                         ));
                     }
@@ -180,6 +175,71 @@ fn check_no_conflicts<C: CommandFactory>(
         },
     )?;
     Ok(())
+}
+
+impl VarArg {
+    fn display(&self) -> String {
+        format!(
+            "{opt} {value}",
+            opt = self.display_name(),
+            value = self.display_value()
+        )
+    }
+
+    fn display_name(&self) -> String {
+        self.name.to_string()
+    }
+
+    fn display_value(&self) -> String {
+        format!(
+            "{lhs}{eq}{rhs}",
+            lhs = &self.lhs,
+            eq = ASSIGN,
+            rhs = &self.rhs
+        )
+    }
+}
+
+impl fmt::Display for ArgName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ArgName::Unknown => write!(f, "--<unknown>"),
+            ArgName::Short(c) => write!(f, "-{c}"),
+            ArgName::Long(s) => write!(f, "--{s}"),
+        }
+    }
+}
+
+impl fmt::Display for Lhs {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", &self.0.join(LHS_SEP))
+    }
+}
+
+impl ArgName {
+    fn from_clap_arg(arg: &clap::Arg) -> Option<ArgName> {
+        arg.get_long()
+            .map(ArgName::from)
+            .or_else(|| arg.get_short().map(ArgName::from))
+    }
+}
+
+impl From<char> for ArgName {
+    fn from(value: char) -> Self {
+        ArgName::Short(value)
+    }
+}
+
+impl From<String> for ArgName {
+    fn from(value: String) -> Self {
+        ArgName::Long(value)
+    }
+}
+
+impl From<&str> for ArgName {
+    fn from(value: &str) -> Self {
+        ArgName::from(value.to_owned())
+    }
 }
 
 mod clap_error {
@@ -273,7 +333,7 @@ mod tests {
             })
             .collect();
 
-        let err = check_no_conflicts::<CommandFactoryImpl>(&vars, "var");
+        let err = check_no_conflicts::<CommandFactoryImpl>(&vars);
         if is_valid {
             assert!(err.is_ok(), "Error: {}", err.unwrap_err());
         } else {
