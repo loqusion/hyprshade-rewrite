@@ -52,12 +52,9 @@ impl TypedValueParser for VarArgParser {
             cmd = format_args!("'{}'", cmd.get_name())
         );
 
-        let value = match value.to_str() {
-            Some(value) => value,
-            None => {
-                return Err(clap_error::invalid_utf8(cmd));
-            }
-        };
+        let value = value
+            .to_str()
+            .ok_or_else(|| clap_error::invalid_utf8(cmd))?;
 
         let value_validation = |suggested: &[String]| {
             clap_error::value_validation(
@@ -71,24 +68,12 @@ impl TypedValueParser for VarArgParser {
         };
 
         let ret = match value.split(VarArg::ASSIGN).collect::<Vec<_>>()[..] {
-            [] => {
-                return Err(value_validation(&["no content".into()]));
-            }
-            [""] => {
-                return Err(value_validation(&["empty".into()]));
-            }
-            [_] => {
-                return Err(value_validation(&["no equals sign".into()]));
-            }
-            ["", _] => {
-                return Err(value_validation(&["empty KEY".into()]));
-            }
-            [_, ""] => {
-                return Err(value_validation(&["empty VALUE".into()]));
-            }
-            [_, _, _, ..] => {
-                return Err(value_validation(&["too many equals signs".into()]));
-            }
+            [] => return Err(value_validation(&["no content".into()])),
+            [""] => return Err(value_validation(&["empty".into()])),
+            [_] => return Err(value_validation(&["no equals sign".into()])),
+            ["", _] => return Err(value_validation(&["empty KEY".into()])),
+            [_, ""] => return Err(value_validation(&["empty VALUE".into()])),
+            [_, _, _, ..] => return Err(value_validation(&["too many equals signs".into()])),
             [lhs, rhs] => {
                 let rhs = rhs.to_string();
                 let lhs: Vec<String> =
