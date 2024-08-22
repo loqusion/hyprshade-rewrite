@@ -183,13 +183,14 @@ impl CommandExecute for Toggle {
         };
 
         if let Some(designated_shader) = designated_shader {
-            let mut designated_data = designated_data;
-            if let Some(config_data) =
-                config.and_then(|config| config.data(designated_shader.name()))
-            {
-                designated_data.merge_deep_keep(config_data.clone());
-            }
-            let designated_data = designated_data;
+            let designated_data = {
+                let mut designated_data = designated_data;
+                if let Some(config_data) = config.and_then(|c| c.data(designated_shader.name())) {
+                    designated_data.merge_deep_keep(config_data.clone());
+                }
+                designated_data
+            };
+
             designated_shader.on(&designated_data)?;
         } else {
             Shader::off()?;
