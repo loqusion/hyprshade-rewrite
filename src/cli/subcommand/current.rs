@@ -20,7 +20,7 @@ impl CommandExecute for Current {
     fn execute(self, _config: Option<&Config>) -> eyre::Result<ExitCode> {
         let Self { long } = self;
 
-        if let Some(shader) = Shader::current()? {
+        if let Some(shader) = Shader::current()?.map(Shader::try_from).transpose()? {
             if long {
                 todo!("current --long")
             } else {

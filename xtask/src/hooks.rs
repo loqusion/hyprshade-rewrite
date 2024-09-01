@@ -1,7 +1,7 @@
-use hyprshade::__private::Shader;
+use hyprshade::__private::{Shader, ShaderInstance};
 
 pub struct RestoreShaderHook {
-    saved_shader: Option<Shader>,
+    saved_shader: Option<ShaderInstance>,
 }
 
 impl RestoreShaderHook {
@@ -18,9 +18,7 @@ impl RestoreShaderHook {
         let Self { saved_shader } = self;
         eprintln!("Restoring shader: {saved_shader:?}");
         match saved_shader {
-            Some(shader) => shader
-                .on(&Default::default())
-                .unwrap_or_else(|err| eprintln!("{err}")),
+            Some(shader) => shader.restore().unwrap_or_else(|err| eprintln!("{err}")),
             None => Shader::off().unwrap_or_else(|err| eprintln!("{err}")),
         }
     }

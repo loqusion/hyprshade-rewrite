@@ -6,12 +6,14 @@
 
 mod builtin;
 mod constants;
+mod dirs;
 mod hyprctl;
+mod resolver;
 mod shader;
 mod template;
 mod util;
 
 #[doc(hidden)]
 pub mod __private {
-    pub use crate::shader::Shader;
+    pub use crate::shader::{Shader, ShaderInstance};
 }

@@ -174,7 +174,7 @@ impl CommandExecute for Toggle {
             }
         };
 
-        let current_shader = Shader::current()?;
+        let current_shader = Shader::current()?.map(Shader::try_from).transpose()?;
 
         let (designated_shader, designated_data) = if shader == current_shader {
             (fallback, fallback_data)

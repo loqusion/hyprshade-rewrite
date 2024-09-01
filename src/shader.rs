@@ -1,13 +1,17 @@
 use std::{
     borrow::Cow,
-    fs::File,
+    fs::{self, File},
+    io,
     os::unix::ffi::OsStrExt,
     path::{Path, PathBuf},
 };
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     builtin::BuiltinShader,
     hyprctl,
+    resolver::{self, Resolver},
     template::TemplateDataMap,
     util::{make_runtime_path, rsplit_file_at_dot, PathExt},
 };
@@ -23,6 +27,19 @@ enum ShaderInner {
     Builtin(BuiltinShader),
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ShaderInstance {
+    source: ShaderSource,
+    instance_path: PathBuf,
+    data: TemplateDataMap,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+enum ShaderSource {
+    Path(PathBuf),
+    Builtin(String),
+}
+
 impl Shader {
     pub fn from_path_buf(path_buf: PathBuf) -> Self {
         debug_assert!(
@@ -36,14 +53,9 @@ impl Shader {
         Self(ShaderInner::Builtin(builtin_shader))
     }
 
-    pub fn current() -> eyre::Result<Option<Self>> {
+    pub fn current() -> eyre::Result<Option<ShaderInstance>> {
         match hyprctl::shader::get()? {
-            Some(path) => {
-                // FIXME: This is incorrect, since it doesn't take into account template shader
-                // instances. The `Shader` instance should point to the template file (i.e.
-                // *.glsl.mustache), not the template instance (i.e. *.glsl).
-                Ok(Some(Self(ShaderInner::Path(path))))
-            }
+            Some(path) => Ok(Some(ShaderInstance::read_alongside_shader(&path)?)),
             None => Ok(None),
         }
     }
@@ -81,7 +93,16 @@ impl Shader {
                 }
             }
         };
-        hyprctl::shader::set(&path)
+        hyprctl::shader::set(&path)?;
+
+        let instance = ShaderInstance {
+            source: self.0.clone().into(),
+            instance_path: path.clone().into_owned(),
+            data: data.to_owned(),
+        };
+        instance.write_alongside_shader()?;
+
+        Ok(())
     }
 
     pub fn name(&self) -> &str {
@@ -107,3 +128,109 @@ impl PartialEq for Shader {
     }
 }
 impl Eq for Shader {}
+
+impl TryFrom<ShaderInstance> for Shader {
+    type Error = ShaderConversionError;
+
+    fn try_from(value: ShaderInstance) -> Result<Self, Self::Error> {
+        value.to_shader()
+    }
+}
+
+impl ShaderInstance {
+    fn read_alongside_shader(path: &Path) -> Result<ShaderInstance, ReadShaderInstanceError> {
+        let path = ShaderInstance::path_from_instance_path(path);
+        let s = fs::read_to_string(&path).map_err(|source| ReadShaderInstanceError::Io {
+            path: path.clone(),
+            source,
+        })?;
+        serde_json::from_str(&s).map_err(|source| ReadShaderInstanceError::SerdeJson {
+            path: path.clone(),
+            source,
+        })
+    }
+
+    fn write_alongside_shader(&self) -> Result<(), WriteShaderInstanceError> {
+        let path = ShaderInstance::path_from_instance_path(&self.instance_path);
+        let file = File::create(&path).map_err(|source| WriteShaderInstanceError::Io {
+            path: path.clone(),
+            source,
+        })?;
+        serde_json::to_writer(file, &self).map_err(|source| WriteShaderInstanceError::SerdeJson {
+            path: path.clone(),
+            source,
+        })
+    }
+
+    fn path_from_instance_path(instance_path: &Path) -> PathBuf {
+        instance_path.with_extension("json")
+    }
+
+    #[allow(dead_code)]
+    pub fn restore(self) -> eyre::Result<()> {
+        let shader = self.to_shader()?;
+        shader.on(&self.data)
+    }
+
+    pub fn to_shader(&self) -> Result<Shader, ShaderConversionError> {
+        match &self.source {
+            ShaderSource::Path(path) => Resolver::with_path(path).resolve().map_err(|source| {
+                ShaderConversionError::Resolver {
+                    path: ShaderInstance::path_from_instance_path(&self.instance_path),
+                    source,
+                }
+            }),
+            ShaderSource::Builtin(name) => Resolver::with_name(&name).resolve().map_err(|source| {
+                ShaderConversionError::Resolver {
+                    path: ShaderInstance::path_from_instance_path(&self.instance_path),
+                    source,
+                }
+            }),
+        }
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+#[error("reading shader instance from {path:?}")]
+enum ReadShaderInstanceError {
+    Io {
+        path: PathBuf,
+        source: io::Error,
+    },
+    SerdeJson {
+        path: PathBuf,
+        source: serde_json::Error,
+    },
+}
+
+#[derive(Debug, thiserror::Error)]
+#[error("writing shader instance to {path:?}")]
+enum WriteShaderInstanceError {
+    Io {
+        path: PathBuf,
+        source: io::Error,
+    },
+    SerdeJson {
+        path: PathBuf,
+        source: serde_json::Error,
+    },
+}
+
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+#[error("converting from shader instance at {path:?}")]
+pub enum ShaderConversionError {
+    Resolver {
+        path: PathBuf,
+        source: resolver::Error,
+    },
+}
+
+impl From<ShaderInner> for ShaderSource {
+    fn from(value: ShaderInner) -> Self {
+        match value {
+            ShaderInner::Path(path) => ShaderSource::Path(path),
+            ShaderInner::Builtin(builtin) => ShaderSource::Builtin(builtin.name().to_owned()),
+        }
+    }
+}
