@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     builtin::BuiltinShader,
+    constants::HYPRSHADE_RUNTIME_DIR,
     hyprctl,
     resolver::{self, Resolver},
     template::TemplateDataMap,
@@ -54,7 +55,13 @@ impl Shader {
 
     pub fn current() -> eyre::Result<Option<ShaderInstance>> {
         match hyprctl::shader::get()? {
-            Some(path) => Ok(Some(ShaderInstance::read_alongside_shader(&path)?)),
+            Some(path) => {
+                if path.starts_with(*HYPRSHADE_RUNTIME_DIR) {
+                    Ok(Some(ShaderInstance::read_alongside_shader(&path)?))
+                } else {
+                    Ok(Some(ShaderInstance::from_path_buf(path)))
+                }
+            }
             None => Ok(None),
         }
     }
@@ -172,6 +179,14 @@ impl ShaderInstance {
     pub fn restore(self) -> eyre::Result<()> {
         let shader = self.to_shader()?;
         shader.on(&self.data)
+    }
+
+    pub fn from_path_buf(path: PathBuf) -> ShaderInstance {
+        ShaderInstance {
+            source: ShaderSource::Path(path.clone()),
+            instance_path: path,
+            data: Default::default(),
+        }
     }
 
     pub fn to_shader(&self) -> Result<Shader, ShaderConversionError> {
