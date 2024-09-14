@@ -1,5 +1,4 @@
 use std::{
-    borrow::Cow,
     fs::{self, File},
     io,
     os::unix::ffi::OsStrExt,
@@ -65,7 +64,7 @@ impl Shader {
     }
 
     pub fn on(&self, data: &TemplateDataMap) -> eyre::Result<()> {
-        let path: Cow<Path> = match &self.0 {
+        let path: PathBuf = match &self.0 {
             ShaderInner::Path(path) => match path
                 .file_name()
                 .map(rsplit_file_at_dot)
@@ -76,9 +75,12 @@ impl Shader {
                     let out_path = make_runtime_path(stem)?;
                     let mut out_file = File::create(&out_path)?;
                     template.render(&mut out_file, data)?;
-                    out_path.into()
+                    out_path
                 }
-                _ => path.into(),
+                _ => {
+                    hyprctl::shader::set(path)?;
+                    return Ok(());
+                }
             },
             ShaderInner::Builtin(builtin_shader) => {
                 let file_name = format!("{}.glsl", builtin_shader.name());
@@ -86,10 +88,10 @@ impl Shader {
                 let mut out_file = File::create(&out_path)?;
                 if builtin_shader.is_template() {
                     builtin_shader.render(&mut out_file, data)?;
-                    out_path.into()
+                    out_path
                 } else {
                     builtin_shader.write(&mut out_file)?;
-                    out_path.into()
+                    out_path
                 }
             }
         };
@@ -97,7 +99,7 @@ impl Shader {
 
         let instance = ShaderInstance {
             source: self.0.clone().into(),
-            instance_path: path.clone().into_owned(),
+            instance_path: path,
             data: data.to_owned(),
         };
         instance.write_alongside_shader()?;
