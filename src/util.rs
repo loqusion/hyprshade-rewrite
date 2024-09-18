@@ -22,10 +22,10 @@ where
 }
 
 pub fn make_runtime_path<P: AsRef<Path>>(file_name: P) -> io::Result<PathBuf> {
-    make_runtime_path_impl(file_name.as_ref())
+    _make_runtime_path(file_name.as_ref())
 }
 
-fn make_runtime_path_impl(file_name: &Path) -> io::Result<PathBuf> {
+fn _make_runtime_path(file_name: &Path) -> io::Result<PathBuf> {
     let out_path = HYPRSHADE_RUNTIME_DIR.to_owned().join(file_name);
     let parent = out_path.parent().ok_or_else(|| {
         io::Error::new(
