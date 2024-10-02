@@ -3,15 +3,16 @@ use std::{collections::HashMap, str::FromStr};
 use serde::{ser, Deserialize, Serialize};
 
 pub trait MergeDeep<A> {
-    fn merge_deep<T: IntoIterator<Item = A>>(&mut self, iter: T, force: bool);
     #[allow(dead_code)]
-    fn merge_deep_keep<T: IntoIterator<Item = A>>(&mut self, iter: T) {
-        self.merge_deep(iter, false)
+    fn merge_deep<T: IntoIterator<Item = A>>(&mut self, iter: T, force: bool) {
+        if force {
+            self.merge_deep_force(iter)
+        } else {
+            self.merge_deep_keep(iter)
+        }
     }
-    #[allow(dead_code)]
-    fn merge_deep_force<T: IntoIterator<Item = A>>(&mut self, iter: T) {
-        self.merge_deep(iter, true)
-    }
+    fn merge_deep_keep<T: IntoIterator<Item = A>>(&mut self, iter: T);
+    fn merge_deep_force<T: IntoIterator<Item = A>>(&mut self, iter: T);
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
@@ -38,7 +39,7 @@ impl TemplateDataMap {
 }
 
 impl MergeDeep<(String, TemplateData)> for HashMap<String, TemplateData> {
-    fn merge_deep<T: IntoIterator<Item = (String, TemplateData)>>(&mut self, iter: T, force: bool) {
+    fn merge_deep_keep<T: IntoIterator<Item = (String, TemplateData)>>(&mut self, iter: T) {
         use std::collections::hash_map::Entry::*;
 
         let iter = iter.into_iter();
@@ -57,12 +58,37 @@ impl MergeDeep<(String, TemplateData)> for HashMap<String, TemplateData> {
                 let value = entry.into_mut();
                 match (value, v) {
                     (TemplateData::Map(inner_value), TemplateData::Map(inner_v)) => {
-                        inner_value.merge_deep(inner_v, force);
+                        inner_value.merge_deep_keep(inner_v);
+                    }
+                    (_value, _v) => {}
+                }
+            }
+        });
+    }
+
+    fn merge_deep_force<T: IntoIterator<Item = (String, TemplateData)>>(&mut self, iter: T) {
+        use std::collections::hash_map::Entry::*;
+
+        let iter = iter.into_iter();
+        let reserve = if self.is_empty() {
+            iter.size_hint().0
+        } else {
+            iter.size_hint().0.saturating_add(1) / 2
+        };
+        self.reserve(reserve);
+
+        iter.for_each(move |(k, v)| match self.entry(k) {
+            Vacant(entry) => {
+                entry.insert(v);
+            }
+            Occupied(entry) => {
+                let value = entry.into_mut();
+                match (value, v) {
+                    (TemplateData::Map(inner_value), TemplateData::Map(inner_v)) => {
+                        inner_value.merge_deep_force(inner_v);
                     }
                     (value, v) => {
-                        if force {
-                            *value = v;
-                        }
+                        *value = v;
                     }
                 }
             }
@@ -71,8 +97,11 @@ impl MergeDeep<(String, TemplateData)> for HashMap<String, TemplateData> {
 }
 
 impl MergeDeep<(String, TemplateData)> for TemplateDataMap {
-    fn merge_deep<T: IntoIterator<Item = (String, TemplateData)>>(&mut self, iter: T, force: bool) {
-        self.0.merge_deep(iter, force);
+    fn merge_deep_keep<T: IntoIterator<Item = (String, TemplateData)>>(&mut self, iter: T) {
+        self.0.merge_deep_keep(iter);
+    }
+    fn merge_deep_force<T: IntoIterator<Item = (String, TemplateData)>>(&mut self, iter: T) {
+        self.0.merge_deep_force(iter);
     }
 }
 
