@@ -81,7 +81,7 @@ impl BuiltinShader {
 
 impl PartialEq for BuiltinShader {
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.name, other.name) && std::ptr::eq(self.value, other.value)
+        std::ptr::eq(self.name, other.name)
     }
 }
 impl Eq for BuiltinShader {}
