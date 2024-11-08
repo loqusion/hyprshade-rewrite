@@ -14,20 +14,20 @@ _mock_time = []
 
 [dependencies]
 chrono = "0.4.38"
-clap = { version = "4.5.11", features = ["cargo", "derive", "env", "error-context", "wrap_help"] }
-clap_derive = "4.5.11"
+clap = { version = "4.5.20", features = ["cargo", "derive", "env", "error-context", "wrap_help"] }
+clap_derive = "4.5.18"
 color-eyre = "0.6.3"
-color-print = "0.3.6"
-const_format = "0.2.32"
+color-print = "0.3.7"
+const_format = "0.2.33"
 directories = "5.0.1"
 eyre = "0.6.12"
 lazy_static = "1.5.0"
 mustache = "0.9.0"
 phf = { version = "0.11.2", features = ["macros"] }
-serde = { version = "1.0.204", features = ["derive"] }
-serde_json = "1.0.121"
-thiserror = "1.0.63"
-toml = "0.8.17"
+serde = { version = "1.0.214", features = ["derive"] }
+serde_json = "1.0.132"
+thiserror = "2.0.0"
+toml = "0.8.19"
 toml-datetime-compat = { version = "0.3.0", features = ["chrono"] }
 tracing = "0.1.40"
 tracing-error = "0.2.0"
@@ -36,10 +36,10 @@ walkdir = "2.5.0"
 
 [dev-dependencies]
 criterion = "0.5.1"
-insta = { version = "1.39.0", features = ["filters", "toml"] }
+insta = { version = "1.41.1", features = ["filters", "toml"] }
 insta-cmd = "0.6.0"
 proc_macros = { version = "0.1.0", path = "proc_macros" }
-tempfile = "3.10.1"
+tempfile = "3.14.0"
 
 [workspace]
 members = [".", "proc_macros", "xtask"]
