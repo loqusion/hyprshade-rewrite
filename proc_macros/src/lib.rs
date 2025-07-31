@@ -1,6 +1,5 @@
-use std::env;
+use std::{env, sync::LazyLock};
 
-use lazy_static::lazy_static;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
@@ -8,9 +7,8 @@ use syn::{
     parse_macro_input, ItemFn,
 };
 
-lazy_static! {
-    static ref IS_HYPRLAND_RUNNING: bool = env::var_os("HYPRLAND_INSTANCE_SIGNATURE").is_some();
-}
+static IS_HYPRLAND_RUNNING: LazyLock<bool> =
+    LazyLock::new(|| env::var_os("HYPRLAND_INSTANCE_SIGNATURE").is_some());
 
 /// Attribute macro declaring a test function that will be ignored if the test is not running in a
 /// Hyprland instance.

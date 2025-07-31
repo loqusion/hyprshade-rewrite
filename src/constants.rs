@@ -1,23 +1,28 @@
-use std::path::Path;
+use std::{path::Path, sync::LazyLock};
 
 use directories::ProjectDirs;
-use lazy_static::lazy_static;
 
 pub const HYPRSHADE_CONFIG_FILE_ENV: &str = "HYPRSHADE_CONFIG_FILE";
 pub const HYPRSHADE_SHADERS_DIR_ENV: &str = "HYPRSHADE_SHADERS_DIR";
 
-lazy_static! {
-    static ref HYPRSHADE_PROJECT_DIRS: ProjectDirs =
-        ProjectDirs::from("", "", &env!("CARGO_PKG_NAME").replace('-', "_"))
-            .expect("failed to get HOME");
-    static ref HYPRLAND_PROJECT_DIRS: ProjectDirs =
-        ProjectDirs::from("", "", "hypr").expect("failed to get HOME");
-    pub static ref HYPRSHADE_CONFIG_DIR: &'static Path = HYPRSHADE_PROJECT_DIRS.config_dir();
-    pub static ref HYPRLAND_CONFIG_DIR: &'static Path = HYPRLAND_PROJECT_DIRS.config_dir();
-    pub static ref HYPRSHADE_RUNTIME_DIR: &'static Path = HYPRSHADE_PROJECT_DIRS
+static HYPRSHADE_PROJECT_DIRS: LazyLock<ProjectDirs> = LazyLock::new(|| {
+    ProjectDirs::from("", "", &env!("CARGO_PKG_NAME").replace('-', "_"))
+        .expect("failed to get HOME")
+});
+
+pub static HYPRSHADE_CONFIG_DIR: LazyLock<&'static Path> =
+    LazyLock::new(|| HYPRSHADE_PROJECT_DIRS.config_dir());
+pub static HYPRSHADE_RUNTIME_DIR: LazyLock<&'static Path> = LazyLock::new(|| {
+    HYPRSHADE_PROJECT_DIRS
         .runtime_dir()
-        .expect("failed to get XDG_RUNTIME_DIR");
-}
+        .expect("failed to get XDG_RUNTIME_DIR")
+});
+
+static HYPRLAND_PROJECT_DIRS: LazyLock<ProjectDirs> =
+    LazyLock::new(|| ProjectDirs::from("", "", "hypr").expect("failed to get HOME"));
+
+pub static HYPRLAND_CONFIG_DIR: LazyLock<&'static Path> =
+    LazyLock::new(|| HYPRLAND_PROJECT_DIRS.config_dir());
 
 pub const README_CONFIGURATION: &str = concat!(env!("CARGO_PKG_REPOSITORY"), "#configuration");
 pub const README_SCHEDULING: &str = concat!(env!("CARGO_PKG_REPOSITORY"), "#scheduling");
