@@ -6,8 +6,8 @@ edition = "2021"
 
 [dependencies]
 lazy_static = "1.5.0"
-quote = "1.0.37"
-syn = { version = "2.0.87", features = ["full"] }
+quote = "1.0.40"
+syn = { version = "2.0.104", features = ["full"] }
 
 [lib]
 proc-macro = true
