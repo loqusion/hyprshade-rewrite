@@ -520,7 +520,6 @@ dependencies = [
  "eyre",
  "insta",
  "insta-cmd",
- "lazy_static",
  "mustache",
  "phf",
  "proc_macros",
@@ -874,7 +873,6 @@ dependencies = [
 name = "proc_macros"
 version = "0.1.0"
 dependencies = [
- "lazy_static",
  "quote",
  "syn",
 ]
