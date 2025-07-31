@@ -36,24 +36,24 @@ pub struct Shader {
 
 impl Config {
     pub fn read<P: AsRef<Path>>(path: P) -> Result<Self, ConfigReadError> {
-        Self::_read(path.as_ref())
-    }
-
-    fn _read(path: &Path) -> Result<Self, ConfigReadError> {
-        let contents = fs::read_to_string(path).map_err(|source| ConfigReadError::Io {
-            path: path.to_owned(),
-            source,
-        })?;
-        let config =
-            ConfigDocument::from_str(&contents).map_err(|source| ConfigReadError::Parse {
+        fn _read(path: &Path) -> Result<Config, ConfigReadError> {
+            let contents = fs::read_to_string(path).map_err(|source| ConfigReadError::Io {
                 path: path.to_owned(),
                 source,
             })?;
+            let config =
+                ConfigDocument::from_str(&contents).map_err(|source| ConfigReadError::Parse {
+                    path: path.to_owned(),
+                    source,
+                })?;
 
-        Ok(Self {
-            config,
-            path: path.to_owned(),
-        })
+            Ok(Config {
+                config,
+                path: path.to_owned(),
+            })
+        }
+
+        _read(path.as_ref())
     }
 
     pub fn path(&self) -> &Path {

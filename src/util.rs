@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use color_eyre::{owo_colors::OwoColorize, Section, SectionExt};
+use color_eyre::{Section, SectionExt, owo_colors::OwoColorize};
 
 use crate::constants::HYPRSHADE_RUNTIME_DIR;
 
@@ -22,19 +22,19 @@ where
 }
 
 pub fn make_runtime_path<P: AsRef<Path>>(file_name: P) -> io::Result<PathBuf> {
-    _make_runtime_path(file_name.as_ref())
-}
+    fn _make_runtime_path(file_name: &Path) -> io::Result<PathBuf> {
+        let out_path = HYPRSHADE_RUNTIME_DIR.to_owned().join(file_name);
+        let parent = out_path.parent().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::Other,
+                format!("failed to get parent of {out_path:?}"),
+            )
+        })?;
+        fs::create_dir_all(parent)?;
+        Ok(out_path)
+    }
 
-fn _make_runtime_path(file_name: &Path) -> io::Result<PathBuf> {
-    let out_path = HYPRSHADE_RUNTIME_DIR.to_owned().join(file_name);
-    let parent = out_path.parent().ok_or_else(|| {
-        io::Error::new(
-            io::ErrorKind::Other,
-            format!("failed to get parent of {out_path:?}"),
-        )
-    })?;
-    fs::create_dir_all(parent)?;
-    Ok(out_path)
+    _make_runtime_path(file_name.as_ref())
 }
 
 pub trait PathExt {

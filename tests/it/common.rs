@@ -144,11 +144,7 @@ impl Space {
 
     #[track_caller]
     pub fn read_runtime_shader(&self, shader_ident: impl Into<ShaderIdentifier>) -> String {
-        self._read_runtime_shader(shader_ident.into())
-    }
-
-    #[track_caller]
-    fn _read_runtime_shader(&self, shader_ident: ShaderIdentifier) -> String {
+        let shader_ident = shader_ident.into();
         let path = self.runtime_dir().join(shader_ident.to_path());
         match fs::read_to_string(&path) {
             Ok(contents) => contents,
@@ -157,10 +153,7 @@ impl Space {
     }
 
     pub fn stash_runtime_shader(&self, shader_ident: impl Into<ShaderIdentifier>) -> FileDropGuard {
-        self._stash_runtime_shader(shader_ident.into())
-    }
-
-    fn _stash_runtime_shader(&self, shader_ident: ShaderIdentifier) -> FileDropGuard {
+        let shader_ident = shader_ident.into();
         let path = self.runtime_dir().join(shader_ident.to_path());
         FileDropGuard::stash(path)
     }
@@ -189,10 +182,7 @@ pub struct FileDropGuard {
 
 impl FileDropGuard {
     pub fn stash<P: AsRef<Path>>(path: P) -> Self {
-        Self::_stash(path.as_ref().to_owned())
-    }
-
-    fn _stash(path: PathBuf) -> Self {
+        let path = path.as_ref().to_owned();
         let stash = fs::read_to_string(&path).ok();
         if stash.is_some() {
             fs::remove_file(&path).ok();

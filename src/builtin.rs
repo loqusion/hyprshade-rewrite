@@ -17,17 +17,17 @@ impl BuiltinShader {
     where
         K: AsRef<[u8]> + ?Sized,
     {
-        BuiltinShader::_get(name.as_ref())
-    }
+        fn _get(name: &[u8]) -> Option<BuiltinShader> {
+            BUILTIN_SHADERS.get_entry(name).map(|(key, value)| {
+                BuiltinShader {
+                    // SAFETY: All keys are valid UTF-8 strings.
+                    name: unsafe { std::str::from_utf8_unchecked(key) },
+                    value,
+                }
+            })
+        }
 
-    fn _get(name: &[u8]) -> Option<BuiltinShader> {
-        BUILTIN_SHADERS.get_entry(name).map(|(key, value)| {
-            BuiltinShader {
-                // SAFETY: All keys are valid UTF-8 strings.
-                name: unsafe { std::str::from_utf8_unchecked(key) },
-                value,
-            }
-        })
+        _get(name.as_ref())
     }
 
     pub fn name(&self) -> &'static str {
