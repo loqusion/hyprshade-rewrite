@@ -44,7 +44,7 @@ use self::{
     impl_binary_search::Schedule as ScheduleBinarySearch, impl_btree::Schedule as ScheduleBTree,
     impl_linear::Schedule as ScheduleLinear, util::Event,
 };
-use criterion::{criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion};
+use criterion::{BatchSize, BenchmarkId, Criterion, criterion_group, criterion_main};
 
 fn benchmark_schedule(c: &mut Criterion) {
     // NOTE: Each half-open range must not overlap with any other.

@@ -6,7 +6,7 @@ use std::{
 };
 
 use color_eyre::{Section, SectionExt};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 pub const PROGRAM_NAME: &str = "hyprctl";
 
@@ -19,7 +19,7 @@ pub mod shader {
         path::{Path, PathBuf},
     };
 
-    use super::{hyprctl_command, HyprctlOption, JsonExt, OutputExt, SHADER_EMPTY_STRING};
+    use super::{HyprctlOption, JsonExt, OutputExt, SHADER_EMPTY_STRING, hyprctl_command};
     use color_eyre::eyre::WrapErr;
 
     const VARIABLE_NAME: &str = "decoration:screen_shader";

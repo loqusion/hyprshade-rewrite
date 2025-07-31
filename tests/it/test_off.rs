@@ -1,6 +1,6 @@
 use proc_macros::hyprland_test;
 
-use crate::common::{hyprshade_cmd_snapshot, Space};
+use crate::common::{Space, hyprshade_cmd_snapshot};
 
 #[hyprland_test]
 fn smoke() {

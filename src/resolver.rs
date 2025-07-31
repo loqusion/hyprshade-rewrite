@@ -1,7 +1,7 @@
 use std::{
     ffi::OsStr,
     fs, io,
-    path::{Path, PathBuf, MAIN_SEPARATOR},
+    path::{MAIN_SEPARATOR, Path, PathBuf},
 };
 
 use tracing::{debug, trace};

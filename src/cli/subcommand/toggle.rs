@@ -7,11 +7,11 @@ use eyre::{Context, OptionExt};
 
 use crate::{
     cli::{
+        CommandExecute,
         arg::{
             help::{SHADER_HELP, SHADER_HELP_LONG as SHADER_HELP_LONG_SOURCE},
             var::{MergeVarArg, VarArg, VarArgParser},
         },
-        CommandExecute,
     },
     config::Config,
     constants::README_CONFIGURATION,

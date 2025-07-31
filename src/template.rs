@@ -1,6 +1,6 @@
 use std::{collections::HashMap, str::FromStr};
 
-use serde::{ser, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, ser};
 
 pub trait MergeDeep<A> {
     #[allow(dead_code)]

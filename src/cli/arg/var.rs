@@ -1,6 +1,6 @@
 use std::{collections::HashMap, error::Error, fmt, iter};
 
-use clap::{builder::TypedValueParser, CommandFactory};
+use clap::{CommandFactory, builder::TypedValueParser};
 use color_eyre::owo_colors::OwoColorize;
 
 use crate::template::{MergeDeep, TemplateData, TemplateDataMap};

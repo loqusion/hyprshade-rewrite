@@ -1,7 +1,7 @@
 use insta::assert_snapshot;
 use proc_macros::hyprland_test;
 
-use crate::common::{hyprshade_cmd_snapshot, CommandExt, Space};
+use crate::common::{CommandExt, Space, hyprshade_cmd_snapshot};
 
 #[hyprland_test]
 fn builtin_shader() {
@@ -36,7 +36,7 @@ fn path_shader() {
 }
 
 mod error {
-    use crate::common::{hyprshade_cmd_snapshot, Space};
+    use crate::common::{Space, hyprshade_cmd_snapshot};
 
     #[test]
     fn fails_resolving_shader() {

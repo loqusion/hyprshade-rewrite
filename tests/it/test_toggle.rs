@@ -1,7 +1,7 @@
 mod error {
     use proc_macros::hyprland_test;
 
-    use crate::common::{hyprshade_cmd_snapshot, CommandExt, Space};
+    use crate::common::{CommandExt, Space, hyprshade_cmd_snapshot};
 
     #[test]
     fn empty_arg_fails_without_config() {

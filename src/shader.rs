@@ -13,7 +13,7 @@ use crate::{
     hyprctl,
     resolver::{self, Resolver},
     template::TemplateDataMap,
-    util::{make_runtime_path, rsplit_file_at_dot, PathExt},
+    util::{PathExt, make_runtime_path, rsplit_file_at_dot},
 };
 
 const TEMPLATE_EXTENSION: &str = "mustache";

@@ -5,11 +5,11 @@ use tracing::warn;
 
 use crate::{
     cli::{
+        CommandExecute,
         arg::{
             help::{SHADER_HELP, SHADER_HELP_LONG},
             var::{MergeVarArg, VarArg, VarArgParser},
         },
-        CommandExecute,
     },
     config::Config,
     resolver::Resolver,
