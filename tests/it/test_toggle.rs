@@ -4,64 +4,6 @@ mod error {
     use crate::common::{CommandExt, Space, hyprshade_cmd_snapshot};
 
     #[test]
-    fn fallback_flags_are_mutually_exclusive() {
-        let space = Space::new();
-
-        hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("toggle").args([
-            "--fallback",
-            "vibrance",
-            "--fallback-auto",
-            "blue-light-filter",
-        ]), @r"
-        success: false
-        exit_code: 2
-        ----- stdout -----
-
-        ----- stderr -----
-        error: the argument '--fallback <FALLBACK>' cannot be used with '--fallback-auto'
-
-        Usage: hyprshade toggle --fallback <FALLBACK> <SHADER>
-
-        For more information, try '--help'.
-        ");
-
-        hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("toggle").args([
-            "--fallback",
-            "vibrance",
-            "--fallback-default",
-            "blue-light-filter",
-        ]), @r"
-        success: false
-        exit_code: 2
-        ----- stdout -----
-
-        ----- stderr -----
-        error: the argument '--fallback <FALLBACK>' cannot be used with '--fallback-default'
-
-        Usage: hyprshade toggle --fallback <FALLBACK> <SHADER>
-
-        For more information, try '--help'.
-        ");
-
-        hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("toggle").args([
-            "--fallback-auto",
-            "--fallback-default",
-            "blue-light-filter",
-        ]), @r"
-        success: false
-        exit_code: 2
-        ----- stdout -----
-
-        ----- stderr -----
-        error: the argument '--fallback-auto' cannot be used with '--fallback-default'
-
-        Usage: hyprshade toggle --fallback-auto <SHADER>
-
-        For more information, try '--help'.
-        ");
-    }
-
-    #[test]
     fn empty_arg_fails_without_config() {
         let mut space = Space::new();
         space.with_any_time();
@@ -325,6 +267,64 @@ mod error {
         [96mSuggestion[0m: Change the shader name in your configuration, or make sure a shader by that name exists
         [96mSuggestion[0m: For more information, see [URL]
         "###);
+    }
+
+    #[test]
+    fn fallback_flags_are_mutually_exclusive() {
+        let space = Space::new();
+
+        hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("toggle").args([
+            "--fallback",
+            "vibrance",
+            "--fallback-auto",
+            "blue-light-filter",
+        ]), @r"
+        success: false
+        exit_code: 2
+        ----- stdout -----
+
+        ----- stderr -----
+        error: the argument '--fallback <FALLBACK>' cannot be used with '--fallback-auto'
+
+        Usage: hyprshade toggle --fallback <FALLBACK> <SHADER>
+
+        For more information, try '--help'.
+        ");
+
+        hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("toggle").args([
+            "--fallback",
+            "vibrance",
+            "--fallback-default",
+            "blue-light-filter",
+        ]), @r"
+        success: false
+        exit_code: 2
+        ----- stdout -----
+
+        ----- stderr -----
+        error: the argument '--fallback <FALLBACK>' cannot be used with '--fallback-default'
+
+        Usage: hyprshade toggle --fallback <FALLBACK> <SHADER>
+
+        For more information, try '--help'.
+        ");
+
+        hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("toggle").args([
+            "--fallback-auto",
+            "--fallback-default",
+            "blue-light-filter",
+        ]), @r"
+        success: false
+        exit_code: 2
+        ----- stdout -----
+
+        ----- stderr -----
+        error: the argument '--fallback-auto' cannot be used with '--fallback-default'
+
+        Usage: hyprshade toggle --fallback-auto <SHADER>
+
+        For more information, try '--help'.
+        ");
     }
 
     #[test]
