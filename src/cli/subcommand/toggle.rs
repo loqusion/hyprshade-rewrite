@@ -1,9 +1,9 @@
-use std::process::ExitCode;
+use std::{cell::LazyCell, process::ExitCode};
 
 use clap::Parser;
 use color_eyre::Section;
 use const_format::{concatcp, formatcp};
-use eyre::{Context, OptionExt};
+use eyre::{OptionExt, eyre};
 
 use crate::{
     cli::{
@@ -15,7 +15,7 @@ use crate::{
     },
     config::Config,
     constants::README_CONFIGURATION,
-    resolver::Resolver,
+    resolver::{self, Resolver},
     schedule::Schedule,
     shader::Shader,
     template::MergeDeep,
@@ -105,67 +105,162 @@ impl CommandExecute for Toggle {
 
         let now = now();
 
+        fn with_readme_suggestion<S: color_eyre::Section<Return = S>>(s: S) -> S {
+            s.with_suggestion(|| format!("For more information, see {README_CONFIGURATION}"))
+        }
+
+        #[derive(Debug)]
+        enum ScheduledShaderResult {
+            NoConfig,
+            ResolverError(resolver::Error),
+            Shader(Option<Shader>),
+        }
+
+        let scheduled_shader_cell: LazyCell<ScheduledShaderResult, _> = LazyCell::new(|| {
+            config.map_or(ScheduledShaderResult::NoConfig, |config| {
+                Schedule::with_config(config)
+                    .scheduled_shader(&now.time())
+                    .map_or_else(
+                        ScheduledShaderResult::ResolverError,
+                        ScheduledShaderResult::Shader,
+                    )
+            })
+        });
+
+        #[derive(Clone, Debug)]
+        enum ScheduledShaderCause {
+            OmittedShader,
+            FallbackAuto,
+        }
+
+        let scheduled_shader = |cause: ScheduledShaderCause| -> eyre::Result<Option<Shader>> {
+            match &*scheduled_shader_cell {
+                ScheduledShaderResult::NoConfig => {
+                    let mut err = eyre!("no configuration file found");
+                    err = match &cause {
+                        ScheduledShaderCause::OmittedShader => err.warning(
+                            "A configuration file is required to call this command without SHADER",
+                        ),
+                        ScheduledShaderCause::FallbackAuto => {
+                            err.warning("A configuration file is required to use --fallback-auto")
+                        }
+                    };
+                    err = with_readme_suggestion(err);
+                    Err(err)
+                }
+                ScheduledShaderResult::ResolverError(err) => {
+                    let mut err = eyre!("{}", err)
+                        .wrap_err("resolving shader in config")
+                        .config_section(config.expect("config file should exist").path());
+                    err = match &cause {
+                        ScheduledShaderCause::OmittedShader => err.note(
+                            "Since you omitted SHADER from cli arguments, it was inferred from the schedule in your configuration",
+                        ),
+                        ScheduledShaderCause::FallbackAuto => err.note(
+                            "Tried to resolve scheduled shader because of --fallback-auto",
+                        ),
+                    };
+                    err = err.suggestion(
+                        "Change the shader name in your configuration, or make sure a shader by that name exists",
+                    );
+                    err = with_readme_suggestion(err);
+                    Err(err)
+                }
+                ScheduledShaderResult::Shader(shader) => Ok(shader.to_owned()),
+            }
+        };
+
+        #[derive(Debug)]
+        enum DefaultShaderResult {
+            NoConfig,
+            ResolverError(resolver::Error),
+            None,
+            Shader(Shader),
+        }
+
+        let default_shader_cell: LazyCell<DefaultShaderResult, _> = LazyCell::new(|| {
+            config.map_or(DefaultShaderResult::NoConfig, |config| {
+                config
+                    .default_shader()
+                    .map_or(DefaultShaderResult::None, |shader| {
+                        Resolver::with_name(&shader.name).resolve().map_or_else(
+                            DefaultShaderResult::ResolverError,
+                            DefaultShaderResult::Shader,
+                        )
+                    })
+            })
+        });
+
+        #[derive(Clone, Debug)]
+        enum DefaultShaderCause {
+            FallbackDefault,
+            FallbackAuto,
+        }
+
+        let default_shader = |cause: DefaultShaderCause| -> eyre::Result<Option<Shader>> {
+            match &*default_shader_cell {
+                DefaultShaderResult::NoConfig => {
+                    let mut err = eyre!("no configuration file found");
+                    err = match &cause {
+                        DefaultShaderCause::FallbackDefault => err
+                            .warning("A configuration file is required to use --fallback-default"),
+                        DefaultShaderCause::FallbackAuto => {
+                            err.warning("A configuration file is required to use --fallback-auto")
+                        }
+                    };
+                    err = with_readme_suggestion(err);
+                    Err(err)
+                }
+                DefaultShaderResult::ResolverError(err) => {
+                    let mut err = eyre!("{}", err)
+                        .wrap_err("resolving default shader in config")
+                        .config_section(config.expect("config file should exist").path());
+                    err = match &cause {
+                        DefaultShaderCause::FallbackDefault => err,
+                        DefaultShaderCause::FallbackAuto => {
+                            err.note("Tried to resolve default shader because of --fallback-auto")
+                        }
+                    };
+                    err = err
+                        .suggestion(
+                            "Change the shader name in your configuration, or make sure a shader by that name exists",
+                        );
+                    err = with_readme_suggestion(err);
+                    Err(err)
+                }
+                DefaultShaderResult::None => Ok(None),
+                DefaultShaderResult::Shader(shader) => Ok(Some(shader.to_owned())),
+            }
+        };
+
         // Eagerly evaluate --var and --var-fallback so that feedback is presented unconditionally
         let fallback_data = Self::merge_into_data(var_fallback)?;
         let shader_data = Self::merge_into_data(var)?;
 
-        let shader = match &shader {
+        let shader: Option<Shader> = match &shader {
             Some(shader) => Some(Resolver::with_cli_arg(shader).resolve()?),
-            None => config
-                .ok_or_eyre("no configuration file found")
-                .warning("A configuration file is required to call this command without SHADER")
-                .and_then(|config| {
-                    Schedule::with_config(config).scheduled_shader(&now.time())
-                        .wrap_err("resolving shader in config")
-                        .config_section(config.path())
-                        .note("Since you omitted SHADER from cli arguments, it was inferred from the schedule in your configuration")
-                        .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
-                })
-                .with_suggestion(|| format!("For more information, see {README_CONFIGURATION}"))?,
+            None => scheduled_shader(ScheduledShaderCause::OmittedShader)?,
         };
 
         let fallback = match (&fallback, fallback_default, fallback_auto) {
             (None, false, false) => None,
             (Some(fallback), false, false) => Some(Resolver::with_cli_arg(fallback).resolve()?),
-            (None, true, false) => {
-                config
-                    .ok_or_eyre("no configuration file found")
-                    .warning("A configuration file is required to use --fallback-default")
-                    .and_then(|config| {
-                        let default_shader = config.default_shader()
-                            .ok_or_eyre("no default shader found in config")
-                            .config_section(config.path())
-                            .suggestion("Make sure a default shader is defined (default = true)")?;
-                        Some(Resolver::with_name(&default_shader.name).resolve())
-                            .transpose()
-                            .wrap_err("resolving default shader in config")
-                            .config_section(config.path())
-                            .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
-                    })
-                    .with_suggestion(|| format!("For more information, see {README_CONFIGURATION}"))?
-            }
+            (None, true, false) => Some(
+                default_shader(DefaultShaderCause::FallbackDefault).and_then(|shader| {
+                    let result = shader
+                        .ok_or_eyre("no default shader found in config")
+                        .config_section(config.expect("config file should exist").path())
+                        .suggestion("Make sure a default shader is defined (default = true)");
+                    with_readme_suggestion(result)
+                })?,
+            ),
             (None, false, true) => {
-                config
-                    .ok_or_eyre("no configuration file found")
-                    .warning("A configuration file is required to use --fallback-auto")
-                    .and_then(|config| {
-                        let scheduled_shader = Schedule::with_config(config).scheduled_shader(&now.time())
-                            .wrap_err("resolving shader in config")
-                            .config_section(config.path())
-                            .note("Tried to resolve scheduled shader because of --fallback-auto")
-                            .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")?;
-                        if shader == scheduled_shader {
-                            config.default_shader().map(|default_shader| Resolver::with_name(&default_shader.name).resolve())
-                                .transpose()
-                                .wrap_err("resolving default shader in config")
-                                .config_section(config.path())
-                                .note("Tried to resolve default shader because of --fallback-auto")
-                                .suggestion("Change the shader name in your configuration, or make sure a shader by that name exists")
-                        } else {
-                            Ok(scheduled_shader)
-                        }
-                    })
-                    .with_suggestion(|| format!("For more information, see {README_CONFIGURATION}"))?
+                let scheduled_shader = scheduled_shader(ScheduledShaderCause::FallbackAuto)?;
+                if shader == scheduled_shader {
+                    default_shader(DefaultShaderCause::FallbackAuto)?
+                } else {
+                    scheduled_shader
+                }
             }
             _ => {
                 unreachable!(
