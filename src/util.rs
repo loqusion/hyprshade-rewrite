@@ -12,12 +12,19 @@ pub trait ConfigSection: Section {
     fn config_section(self, path: &Path) -> Self::Return;
 }
 
+impl ConfigSection for eyre::Report {
+    fn config_section(self, path: &Path) -> Self::Return {
+        self.with_section(|| path.display().yellow().to_string().header("Configuration:"))
+    }
+}
+
 impl<T, E> ConfigSection for eyre::Result<T, E>
 where
     E: Into<eyre::Report>,
 {
     fn config_section(self, path: &Path) -> Self::Return {
-        self.with_section(|| path.display().yellow().to_string().header("Configuration:"))
+        self.map_err(|error| error.into())
+            .map_err(|report| report.config_section(path))
     }
 }
 
