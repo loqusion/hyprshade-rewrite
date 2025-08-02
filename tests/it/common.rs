@@ -7,6 +7,7 @@ use std::{
 };
 
 use insta_cmd::get_cargo_bin;
+use parking_lot::{Mutex, MutexGuard};
 use tempfile::TempDir;
 
 const DIRS: &[(&str, &str)] = &[("HOME", ""), ("XDG_CONFIG_HOME", ".config")];
@@ -55,17 +56,24 @@ fn get_bin() -> PathBuf {
     get_cargo_bin(env!("CARGO_PKG_NAME"))
 }
 
+static TEST_MUTEX: Mutex<()> = Mutex::new(());
+
 pub struct Space {
     #[allow(dead_code)]
     tempdir: TempDir,
     working_dir: PathBuf,
     home: PathBuf,
     time: Option<String>,
+
+    /// Used to enforce sequential test execution
+    _lock: MutexGuard<'static, ()>,
 }
 
 impl Space {
     #[track_caller]
     pub fn new() -> Self {
+        let lock = TEST_MUTEX.lock();
+
         let tempdir = TempDir::new().unwrap();
         let working_dir = tempdir.path().join("working_dir");
         let home = bootstrap_home(tempdir.path());
@@ -75,6 +83,7 @@ impl Space {
             working_dir,
             home,
             time: None,
+            _lock: lock,
         }
     }
 
