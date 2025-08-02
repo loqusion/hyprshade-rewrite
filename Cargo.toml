@@ -37,6 +37,7 @@ walkdir = "2.5.0"
 criterion = "0.7.0"
 insta = { version = "1.43.1", features = ["filters", "toml"] }
 insta-cmd = "0.6.0"
+parking_lot = "0.12.4"
 proc_macros = { version = "0.1.0", path = "proc_macros" }
 tempfile = "3.20.0"
 
