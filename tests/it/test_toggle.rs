@@ -69,6 +69,8 @@ fn empty_arg_fails_resolving_scheduled_shader() {
             end_time = 02:00:00
         "#,
     );
+
+    let _stash = space.stash_runtime_shader("vibrance");
     space.hyprshade_cmd().arg("on").arg("vibrance").run();
 
     hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("toggle"), @r#"
@@ -150,6 +152,8 @@ fn fallback_default_fails_resolving_shader() {
             default = true
         "#,
     );
+
+    let _stash = space.stash_runtime_shader("vibrance");
     space.hyprshade_cmd().arg("on").arg("vibrance").run();
 
     hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("toggle").args(["vibrance", "--fallback-default"]), @r#"
@@ -206,6 +210,8 @@ fn fallback_auto_fails_resolving_scheduled_shader() {
             end_time = 02:00:00
         "#,
     );
+
+    let _stash = space.stash_runtime_shader("vibrance");
     space.hyprshade_cmd().arg("on").arg("vibrance").run();
 
     hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("toggle").args(["vibrance", "--fallback-auto"]), @r#"
@@ -244,6 +250,8 @@ fn fallback_auto_fails_resolving_default_shader() {
             end_time = 02:00:00
         "#,
     );
+
+    let _stash = space.stash_runtime_shader("vibrance");
     space.hyprshade_cmd().arg("on").arg("vibrance").run();
 
     hyprshade_cmd_snapshot!(space.hyprshade_cmd().arg("toggle").args(["vibrance", "--fallback-auto"]), @r#"
