@@ -1,0 +1,20 @@
+---
+source: tests/it/test_toggle.rs
+info:
+  program: hyprshade
+  args:
+    - toggle
+    - vibrance
+    - "--fallback-auto"
+  env:
+    COLORBT_SHOW_HIDDEN: ""
+    HOME: /tmp/.tmp4AjAPl/hyprshade-test-dir/home/
+    RUST_BACKTRACE: ""
+    XDG_CONFIG_HOME: /tmp/.tmp4AjAPl/hyprshade-test-dir/home/.config
+    __HYPRSHADE_MOCK_TIME: "00:59:59.999999999"
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----

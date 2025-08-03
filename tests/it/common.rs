@@ -1,7 +1,10 @@
 use std::{
+    collections::HashSet,
     env,
     ffi::OsStr,
-    fs,
+    fmt, fs,
+    hash::Hash,
+    io,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -111,15 +114,23 @@ impl Space {
 
     fn cmd<S: AsRef<OsStr>>(&self, program: S) -> Command {
         let mut cmd = Command::new(program);
+
         for (key, path) in DIRS {
             let path = self.home().join(path);
             cmd.env(key, path);
         }
+
+        const ENV_REMOVE: &[&str] = &["RUST_BACKTRACE", "COLORBT_SHOW_HIDDEN"];
+        for key in ENV_REMOVE {
+            cmd.env_remove(key);
+        }
+
         if let Some(time) = &self.time {
             cmd.env("__HYPRSHADE_MOCK_TIME", time);
         } else {
             cmd.env_remove("__HYPRSHADE_MOCK_TIME");
         }
+
         cmd.current_dir(&self.working_dir);
         cmd
     }
@@ -166,10 +177,78 @@ impl Space {
         let path = self.runtime_dir().join(shader_ident.to_path());
         FileDropGuard::stash(path)
     }
+
+    #[track_caller]
+    pub fn stash_runtime_shaders(
+        &self,
+        shader_idents: impl IntoIterator<Item = impl Into<ShaderIdentifier>>,
+    ) -> Vec<FileDropGuard> {
+        fn duplicates<T>(iter: impl IntoIterator<Item = T>) -> HashSet<T>
+        where
+            T: Eq + Hash,
+        {
+            let mut seen = HashSet::new();
+            iter.into_iter().fold(HashSet::new(), |mut duplicates, i| {
+                if seen.contains(&i) {
+                    duplicates.insert(i);
+                } else {
+                    seen.insert(i);
+                }
+                duplicates
+            })
+        }
+
+        #[track_caller]
+        fn assert_no_duplicates<T>(shader_idents: impl IntoIterator<Item = T>)
+        where
+            T: Eq + Hash + fmt::Debug,
+        {
+            let duplicates = duplicates(shader_idents);
+            assert!(
+                duplicates.is_empty(),
+                "Shader names should not be given more than once.\nDuplicates: {}",
+                duplicates
+                    .iter()
+                    .map(|s| format!("{:?}", s))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+        }
+
+        let shader_idents = shader_idents
+            .into_iter()
+            .map(Into::into)
+            .collect::<Vec<_>>();
+
+        assert_no_duplicates(&shader_idents);
+
+        shader_idents
+            .into_iter()
+            .map(|shader_ident| self.stash_runtime_shader(shader_ident))
+            .collect()
+    }
+
+    #[track_caller]
+    pub fn current_shader(&self) -> Option<String> {
+        let output = self.hyprshade_cmd().arg("current").output().unwrap();
+        assert!(output.status.success());
+
+        let s = String::from_utf8(output.stdout).unwrap();
+        let s = s.strip_suffix('\n').map(ToOwned::to_owned).unwrap_or(s);
+
+        (!s.is_empty()).then_some(s)
+    }
 }
 
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct ShaderIdentifier {
     name: &'static str,
+}
+
+impl fmt::Debug for ShaderIdentifier {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self.name, f)
+    }
 }
 
 impl ShaderIdentifier {
@@ -181,6 +260,12 @@ impl ShaderIdentifier {
 impl From<&'static str> for ShaderIdentifier {
     fn from(value: &'static str) -> Self {
         Self { name: value }
+    }
+}
+
+impl From<&&'static str> for ShaderIdentifier {
+    fn from(value: &&'static str) -> Self {
+        Self { name: *value }
     }
 }
 
@@ -210,37 +295,74 @@ impl Drop for FileDropGuard {
     }
 }
 
+#[doc(hidden)]
+#[derive(Debug, thiserror::Error)]
+pub enum CommandRunError {
+    #[error("failed running command: {command}: {source}")]
+    Io { command: String, source: io::Error },
+    #[error(transparent)]
+    Status(#[from] CommandStatusError),
+}
+
+#[doc(hidden)]
+#[derive(Debug, thiserror::Error)]
+#[error(
+    "\
+    failed running command: {command}\n\
+    exit_code: {}\n\
+    --- stdout ---\n\
+    {}\n\
+    --- stderr ---\n\
+    {}\n\
+    ",
+    status.code().map_or_else(|| "none".to_owned(), |code| code.to_string()),
+    String::from_utf8_lossy(.stdout),
+    String::from_utf8_lossy(.stderr),
+)]
+pub struct CommandStatusError {
+    command: String,
+    status: std::process::ExitStatus,
+    stdout: Vec<u8>,
+    stderr: Vec<u8>,
+}
+
 pub trait CommandExt {
     #[track_caller]
-    fn run(&mut self);
+    fn run(&mut self) -> std::process::Output;
+
+    #[doc(hidden)]
+    fn _run(&mut self) -> Result<std::process::Output, CommandRunError>;
 }
 
 impl CommandExt for Command {
-    fn run(&mut self) {
-        let output = match self.output() {
+    fn run(&mut self) -> std::process::Output {
+        match self._run() {
             Ok(output) => output,
-            Err(err) => panic!("failed running {:?}: {}", self, err),
-        };
+            Err(err) => panic!("{}", err),
+        }
+    }
 
-        if output.status.code() != Some(0) {
-            let command = format!("{:?}", self);
-            let code = output
-                .status
-                .code()
-                .map(|c| c.to_string())
-                .unwrap_or_else(|| "none".to_string());
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            panic!(
-                "\
-                failed running {command}\n\
-                exit_code: {code}\n\
-                ---- stdout ----\n\
-                {stdout}\n\
-                ---- stderr ----\n\
-                {stderr}\
-                "
-            );
+    fn _run(&mut self) -> Result<std::process::Output, CommandRunError> {
+        let output = self.output().map_err(|source| CommandRunError::Io {
+            command: format!("{:?}", self),
+            source,
+        })?;
+
+        if output.status.success() {
+            Ok(output)
+        } else {
+            let std::process::Output {
+                status,
+                stdout,
+                stderr,
+            } = output;
+
+            Err(CommandRunError::Status(CommandStatusError {
+                command: format!("{:?}", self),
+                status,
+                stdout,
+                stderr,
+            }))
         }
     }
 }
