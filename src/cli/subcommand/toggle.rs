@@ -174,19 +174,21 @@ impl CommandExecute for Toggle {
         enum DefaultShaderResult {
             NoConfig,
             ResolverError(resolver::Error),
-            None,
-            Shader(Shader),
+            Shader(Option<Shader>),
         }
 
         let default_shader_cell: LazyCell<DefaultShaderResult, _> = LazyCell::new(|| {
             config.map_or(DefaultShaderResult::NoConfig, |config| {
                 config
                     .default_shader()
-                    .map_or(DefaultShaderResult::None, |shader| {
-                        Resolver::with_name(&shader.name).resolve().map_or_else(
-                            DefaultShaderResult::ResolverError,
-                            DefaultShaderResult::Shader,
-                        )
+                    .map_or(DefaultShaderResult::Shader(None), |shader| {
+                        Resolver::with_name(&shader.name)
+                            .resolve()
+                            .map(Some)
+                            .map_or_else(
+                                DefaultShaderResult::ResolverError,
+                                DefaultShaderResult::Shader,
+                            )
                     })
             })
         });
@@ -228,8 +230,7 @@ impl CommandExecute for Toggle {
                     err = with_readme_suggestion(err);
                     Err(err)
                 }
-                DefaultShaderResult::None => Ok(None),
-                DefaultShaderResult::Shader(shader) => Ok(Some(shader.to_owned())),
+                DefaultShaderResult::Shader(shader) => Ok(shader.to_owned()),
             }
         };
 
