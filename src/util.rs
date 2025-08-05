@@ -47,19 +47,27 @@ pub fn make_runtime_path<P: AsRef<Path>>(file_name: P) -> io::Result<PathBuf> {
 pub trait PathExt {
     #[must_use]
     fn file_prefix(&self) -> Option<&OsStr>;
+
+    #[must_use]
+    fn file_stem_extension(&self) -> (Option<&OsStr>, Option<&OsStr>);
 }
 
-impl<P: ?Sized + AsRef<Path>> PathExt for P {
+impl PathExt for Path {
     fn file_prefix(&self) -> Option<&OsStr> {
-        self.as_ref()
-            .file_name()
+        self.file_name()
             .map(split_file_at_dot)
             .map(|(before, _after)| before)
+    }
+
+    fn file_stem_extension(&self) -> (Option<&OsStr>, Option<&OsStr>) {
+        self.file_name()
+            .map(rsplit_file_at_dot)
+            .unwrap_or((None, None))
     }
 }
 
 // basic workhorse for splitting stem and extension
-pub fn rsplit_file_at_dot(file: &OsStr) -> (Option<&OsStr>, Option<&OsStr>) {
+fn rsplit_file_at_dot(file: &OsStr) -> (Option<&OsStr>, Option<&OsStr>) {
     if file.as_encoded_bytes() == b".." {
         return (Some(file), None);
     }

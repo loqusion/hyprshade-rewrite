@@ -13,7 +13,7 @@ use crate::{
     hyprctl,
     resolver::{self, Resolver},
     template::TemplateDataMap,
-    util::{PathExt, make_runtime_path, rsplit_file_at_dot},
+    util::{PathExt, make_runtime_path},
 };
 
 const TEMPLATE_EXTENSION: &str = "mustache";
@@ -72,12 +72,8 @@ impl Shader {
 
     pub fn on(&self, data: &TemplateDataMap) -> eyre::Result<()> {
         let path: PathBuf = match &self.0 {
-            ShaderInner::Path(path) => match path
-                .file_name()
-                .map(rsplit_file_at_dot)
-                .and_then(|v| v.0.zip(v.1))
-            {
-                Some((stem, extension)) if extension == TEMPLATE_EXTENSION => {
+            ShaderInner::Path(path) => match path.file_stem_extension() {
+                (Some(stem), Some(extension)) if extension == TEMPLATE_EXTENSION => {
                     let template = mustache::compile_path(path)?;
                     let out_path = make_runtime_path(stem)?;
                     let mut out_file = File::create(&out_path)?;
@@ -117,8 +113,8 @@ impl Shader {
     pub fn name(&self) -> &str {
         match &self.0 {
             ShaderInner::Path(path) => {
-                let prefix =
-                    PathExt::file_prefix(path).unwrap_or_else(|| panic!("invalid path: {path:?}"));
+                let prefix = PathExt::file_prefix(path.as_path())
+                    .unwrap_or_else(|| panic!("invalid path: {path:?}"));
                 std::str::from_utf8(prefix.as_bytes())
                     .unwrap_or_else(|err| panic!("when converting {path:?}: {err}"))
             }
