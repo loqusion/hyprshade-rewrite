@@ -45,9 +45,32 @@ pub fn make_runtime_path<P: AsRef<Path>>(file_name: P) -> io::Result<PathBuf> {
 }
 
 pub trait PathExt {
+    /// Extracts the prefix of [`self.file_name`].
+    ///
+    /// The prefix is:
+    ///
+    /// * [`None`], if there is no file name;
+    /// * The entire file name if there is no embedded `.`;
+    /// * The portion of the file name before the first non-beginning `.`;
+    /// * The entire file name if the file name begins with `.` and has no other `.`s within;
+    /// * The portion of the file name before the second `.` if the file name begins with `.`
+    ///
+    /// [`self.file_name`]: Path::file_name
+    ///
     #[must_use]
     fn file_prefix(&self) -> Option<&OsStr>;
 
+    /// Extracts the stem (non-extension) and extension (without the leading dot) of
+    /// [`self.file_name`], if possible.
+    ///
+    /// * `(None, None)`, if there is no file name;
+    /// * `(Some(x), None)` where `x` is the entire file name if there is no embedded `.`;
+    /// * `(Some(x), None)` where `x` is the entire file name if the file name begins with `.` and
+    ///   has no other `.`s within;
+    /// * Otherwise, `(Some(x), Some(y))`, where `x` and `y` are the portions before and after the
+    ///   final `.` respectively
+    ///
+    /// [`self.file_name`]: Path::file_name
     #[must_use]
     fn file_stem_extension(&self) -> (Option<&OsStr>, Option<&OsStr>);
 }
