@@ -47,9 +47,6 @@ pub fn make_runtime_path<P: AsRef<Path>>(file_name: P) -> io::Result<PathBuf> {
 pub trait PathExt {
     #[must_use]
     fn file_prefix(&self) -> Option<&OsStr>;
-    #[allow(dead_code)]
-    #[must_use]
-    fn extension(&self) -> Option<&OsStr>;
 }
 
 impl<P: ?Sized + AsRef<Path>> PathExt for P {
@@ -58,12 +55,6 @@ impl<P: ?Sized + AsRef<Path>> PathExt for P {
             .file_name()
             .map(split_file_at_dot)
             .map(|(before, _after)| before)
-    }
-    fn extension(&self) -> Option<&OsStr> {
-        self.as_ref()
-            .file_name()
-            .map(rsplit_file_at_dot)
-            .and_then(|(before, after)| before.and(after))
     }
 }
 
