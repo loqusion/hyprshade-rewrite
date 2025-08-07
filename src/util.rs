@@ -31,12 +31,9 @@ where
 pub fn make_runtime_path<P: AsRef<Path>>(file_name: P) -> io::Result<PathBuf> {
     fn _make_runtime_path(file_name: &Path) -> io::Result<PathBuf> {
         let out_path = HYPRSHADE_RUNTIME_DIR.to_owned().join(file_name);
-        let parent = out_path.parent().ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::Other,
-                format!("failed to get parent of {out_path:?}"),
-            )
-        })?;
+        let parent = out_path
+            .parent()
+            .ok_or_else(|| io::Error::other(format!("failed to get parent of {out_path:?}")))?;
         fs::create_dir_all(parent)?;
         Ok(out_path)
     }
