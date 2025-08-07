@@ -47,6 +47,18 @@ jobs:
       - name: cargo fmt --check
         run: cargo fmt --all --check --verbose
 
+  hack-check:
+    name: cargo hack check
+    needs: basics
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@cargo-hack
+      - uses: Swatinem/rust-cache@v2
+      - name: Check feature powerset
+        run: |
+          cargo hack check --rust-version --workspace --ignore-private --feature-powerset --optional-deps
+
   test:
     name: test
     needs: basics
